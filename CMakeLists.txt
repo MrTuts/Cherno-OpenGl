@@ -23,7 +23,6 @@ option(PRODUCTION_BUILD "Make this a production build" OFF)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Release>:Release>")
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE) #link time optimization
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE) #link time optimization
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO TRUE)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_MINSIZEREL TRUE)
@@ -47,10 +46,10 @@ add_subdirectory(thirdparty/glfw-3.4)			#window oppener
 add_subdirectory(thirdparty/glad)				#opengl loader
 # add_subdirectory(thirdparty/stb_image)			#loading immaged
 # add_subdirectory(thirdparty/stb_truetype)		#loading ttf files
-#add_subdirectory(thirdparty/enet-1.3.17)		#networking
+# add_subdirectory(thirdparty/enet-1.3.17)		#networking
 # add_subdirectory(thirdparty/raudio)				#audio
 # add_subdirectory(thirdparty/glm)				#math
-add_subdirectory(thirdparty/imgui-docking)		#ui
+# add_subdirectory(thirdparty/imgui-docking)		#ui
 # add_subdirectory(thirdparty/gl2d)				#rendering
 
 
@@ -102,7 +101,15 @@ target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURC
 #	glad stb_image stb_truetype gl2d raudio imgui enet)
 
 #enet not working yet on linux for some reason
-target_link_libraries("${CMAKE_PROJECT_NAME}" PRIVATE glm glfw 
-	glad stb_image stb_truetype gl2d raudio imgui)
+target_link_libraries("${CMAKE_PROJECT_NAME}" PRIVATE 
+# glm 
+glfw 
+glad 
+# stb_image 
+# stb_truetype 
+# gl2d 
+# raudio 
+# imgui
+)
 
 
