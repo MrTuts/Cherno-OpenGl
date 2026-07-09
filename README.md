@@ -1,5 +1,11 @@
 # GLFWCMakeSetup
 
+Content is from following [OpenGl](https://www.youtube.com/watch?v=W3gAzLwfIP0&list=PLlrATfBNZ98foTJPJ_Ev03o2oq3-GGOS2) series.
+
+Original setup used from [LowLevelGameDevGuy](https://github.com/meemknight/GLFWCMakeSetup), modified to also run on Mac with VSCode.
+
+Original setup readme:
+
 ---
 
 ## How to use it Tutorial 
@@ -10,8 +16,6 @@ https://www.youtube.com/watch?v=FrVABOhRyQg
 
 I already setup GLFW + GLAD + IMGUI + GLM + (sound (raudio) and networking (ENet) libraries) for you! 
 Take it and enjoy! You don't need to know CMake!
-
-![image](https://github.com/meemknight/GLFWCMakeSetup/assets/36445656/79e122b9-a77b-4711-bbbe-138a071f3e91)
 
 <p>Opening the Solution:</p> 
 
