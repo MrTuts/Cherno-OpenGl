@@ -48,6 +48,8 @@ int main(void)
 		exit(EXIT_FAILURE);
 	}
 
+	std::cout << "GL_VERSION: " << glGetString(GL_VERSION) << std::endl;
+
 	// enableReportGlErrors();
 
 	while (!glfwWindowShouldClose(window))
