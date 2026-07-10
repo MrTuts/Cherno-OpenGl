@@ -1,5 +1,5 @@
 #pragma once
-#include <glad/glad.h>
+#include <GL/glew.h>
 
 // https://learnopengl.com/In-Practice/Debugging
 void GLAPIENTRY glDebugOutput(GLenum source,

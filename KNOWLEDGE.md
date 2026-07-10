@@ -20,7 +20,7 @@ On most platforms, OpenGL function pointers beyond the very basics (v1.1) are **
 - Linux: `glXGetProcAddress`
 - macOS: `NSGLGetProcAddress` (macOS deprecated OpenGL in favor of Metal in 2018, but it still works)
 
-Doing this manually for every `gl*` function (there are hundreds) would be tedious. This is the problem **GLAD** solves.
+Doing this manually for every `gl*` function (there are hundreds) would be tedious. This is the problem **GLEW** solves.
 
 ---
 
@@ -39,7 +39,7 @@ Key GLFW calls in this project (`src/Application.cpp`):
 glfwInit();                          // initialize GLFW
 glfwCreateWindow(640, 480, ...);     // create OS window
 glfwMakeContextCurrent(window);      // make the GL context active on this thread
-                                     //   (must happen before glad loads pointers)
+                                     //   (must happen before GLEW initializes pointers)
 glfwSwapBuffers(window);             // swap front/back buffers (double buffering)
 glfwPollEvents();                    // process OS input events
 glfwTerminate();                     // cleanup
@@ -49,23 +49,24 @@ glfwTerminate();                     // cleanup
 
 ---
 
-## GLAD — GL Loader
+## GLEW — GL Loader
 
-GLAD is a **function pointer loader** generated from the official OpenGL registry. It:
+GLEW is a **function pointer loader** that initializes OpenGL extension/function entry points at runtime. It:
 
-1. Declares a function pointer variable for every `gl*` function you want (e.g. `PFNGLCLEARPROC glad_glClear`).
-2. Redefines the plain `glClear` macro to call that pointer.
-3. Provides `gladLoadGLLoader()` which iterates over every pointer and fills it in by calling whatever proc-address function you hand it.
+1. Exposes OpenGL symbols through `glew.h` (loaded from runtime driver function pointers).
+2. Initializes those symbols with `glewInit()` after a context exists.
+3. Uses GLFW's context/proc setup so the initialized `gl*` calls are valid on the current context.
 
-In this project that one call is:
+In this project the initialization is:
 
 ```cpp
-gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+glewExperimental = GL_TRUE;
+glewInit();
 ```
 
-GLAD uses GLFW's cross-platform proc-address getter to populate every `gl*` function pointer. After this call, all `gl*` functions work.
+After `glewInit()`, `gl*` functions are ready for use.
 
-The source lives at `thirdparty/glad/src/glad.c` and headers at `thirdparty/glad/include/glad/glad.h`.
+The source lives at `thirdparty/glew-2.3.1/src/glew.c` and headers at `thirdparty/glew-2.3.1/include/GL/glew.h`.
 
 ---
 
@@ -79,13 +80,12 @@ The source lives at `thirdparty/glad/src/glad.c` and headers at `thirdparty/glad
     ├─ glfwCreateWindow(...)         ← OS window + OpenGL context created
     ├─ glfwMakeContextCurrent(win)   ← context bound to this thread
     │
-    └─ gladLoadGLLoader(             ← GLAD populates all gl* function pointers
-           glfwGetProcAddress)          using GLFW's cross-platform proc lookup
+    └─ glewInit()                    ← GLEW populates gl* function pointers
                 │
                 └─ now glClear(), glBegin(), etc. are callable
 ```
 
-**Include order matters**: `glad/glad.h` must come **before** `GLFW/glfw3.h`. GLAD defines the GL types; if GLFW's GL header loads first there are conflicts. The compile definition `GLFW_INCLUDE_NONE=1` (set in `CMakeLists.txt`) prevents GLFW from auto-including any OpenGL header at all, making the order explicit and safe.
+**Include order matters**: `GL/glew.h` must come **before** `GLFW/glfw3.h`. The compile definition `GLFW_INCLUDE_NONE=1` (set in `CMakeLists.txt`) prevents GLFW from auto-including any OpenGL header at all, making the order explicit and safe.
 
 ---
 
@@ -116,8 +116,8 @@ Double buffering: you always draw to the **back buffer**; `glfwSwapBuffers` flip
 | Directory | Purpose |
 |---|---|
 | `thirdparty/glfw-3.4` | GLFW source, built as a static lib via `add_subdirectory` |
-| `thirdparty/glad` | GLAD source (one `.c` file + headers), built as a static lib |
+| `thirdparty/glew-2.3.1` | GLEW source (one `.c` file + headers), built as a static lib |
 | `src/` | Your application code |
 | `include/` | Your public headers |
 
-The main executable links against `glad` and `glfw` targets. GLFW on macOS automatically links the required system frameworks (Cocoa, OpenGL, IOKit).
+The main executable links against `glew` and `glfw` targets. GLFW on macOS automatically links the required system frameworks (Cocoa, OpenGL, IOKit).

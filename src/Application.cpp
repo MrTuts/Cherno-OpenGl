@@ -1,5 +1,5 @@
 // #define GLFW_INCLUDE_NONE
-#include <glad/glad.h>
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
 // #include <gl2d/gl2d.h>
@@ -42,11 +42,13 @@ int main(void)
 #endif
 
 	glfwMakeContextCurrent(window);
-	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+	glewExperimental = GL_TRUE;
+	if (glewInit() != GLEW_OK)
 	{
 		glfwTerminate();
 		exit(EXIT_FAILURE);
 	}
+	glGetError();
 
 	std::cout << "GL_VERSION: " << glGetString(GL_VERSION) << std::endl;
 

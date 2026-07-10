@@ -34,6 +34,8 @@ endif()
 
 project(mygame)
 
+find_package(OpenGL REQUIRED)
+
 
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
@@ -43,7 +45,10 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
 
 add_subdirectory(thirdparty/glfw-3.4)			#window oppener
-add_subdirectory(thirdparty/glad)				#opengl loader
+# Build bundled GLEW as a static library
+add_library(glew STATIC thirdparty/glew-2.3.1/src/glew.c)
+target_include_directories(glew PUBLIC thirdparty/glew-2.3.1/include)
+target_compile_definitions(glew PUBLIC GLEW_STATIC=1)
 # add_subdirectory(thirdparty/stb_image)			#loading immaged
 # add_subdirectory(thirdparty/stb_truetype)		#loading ttf files
 # add_subdirectory(thirdparty/enet-1.3.17)		#networking
@@ -98,18 +103,17 @@ target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURC
 
 
 #target_link_libraries("${CMAKE_PROJECT_NAME}" PRIVATE glm glfw 
-#	glad stb_image stb_truetype gl2d raudio imgui enet)
+#	glew stb_image stb_truetype gl2d raudio imgui enet)
 
 #enet not working yet on linux for some reason
 target_link_libraries("${CMAKE_PROJECT_NAME}" PRIVATE 
 # glm 
 glfw 
-glad 
+glew 
+OpenGL::GL
 # stb_image 
 # stb_truetype 
 # gl2d 
 # raudio 
 # imgui
 )
-
-
