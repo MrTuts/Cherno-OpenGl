@@ -121,3 +121,27 @@ Double buffering: you always draw to the **back buffer**; `glfwSwapBuffers` flip
 | `include/` | Your public headers |
 
 The main executable links against `glad` and `glfw` targets. GLFW on macOS automatically links the required system frameworks (Cocoa, OpenGL, IOKit).
+
+## Drawaing with OpenGL
+
+- We specify vertex buffer - this is just a block of memory on VRAM
+- We declare shaders - shader is just a program running on GPU, specifying how to draw the data in buffer to screen
+- vertex is not a position, it can contain any data, mostly it is position, but can have some additional data too. So Vertex is a blob of data of any size needed to describe that vertex (e.g.position, texture coordinates, normals, colors, tangents etc.). Each of these are called vertex attributes
+
+### Shaders
+
+There are different types of shaders: `Vertex shaders` and `Fragment (pixel) shaders` are the most used ones. There are others e.g. `Geometry shaders`, `Compute shaders`, `Tessellation shaders` and more.
+We can pass data from vertex shader into fragment shader. Fragment shaders are called many more times, since they run for each pixel.
+
+#### Vertex shaders
+
+Vertex shader will be called for every vertex. The shader determines where the vertex  should be placed in the window space.
+
+#### Fragment shaders (Pixel shader)
+
+Runs once for each pixel that need to be rasterized - in case of rendering triangles, for each pixel inside the triangle specified by vertices. The shader determines the color of the pixel.
+
+### Rendering pipeline
+
+Simplified pipeline
+data -> vertex shaders -> fragment shaders -> screen.
