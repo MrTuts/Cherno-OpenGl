@@ -321,17 +321,64 @@ glUseProgram(program);        // install program into the rendering pipeline
 
 ## Drawing
 
+### `glDrawArrays`
+
 ```cpp
-glDrawArrays(
-    GL_TRIANGLES,   // primitive type
-    0,              // starting vertex index
-    3               // number of vertices to read
+glDrawArrays(GL_TRIANGLES, 0, 3);
+// primitive type, starting vertex index, vertex count
+```
+
+OpenGL reads vertices sequentially from the bound VBO. Simple, but wasteful when vertices are shared between primitives — a rectangle needs 4 unique vertices but 6 vertex entries (two triangles × 3 vertices each), duplicating 2.
+
+### Index Buffer Object (IBO / EBO)
+
+An index buffer holds a list of **unsigned integers** that tell OpenGL which vertices to use and in what order, instead of repeating vertex data. This lets multiple triangles share the same vertex.
+
+Drawing a rectangle with 4 vertices instead of 6:
+
+```
+3 ---- 2
+|    / |
+|   /  |
+|  /   |
+| /    |
+0 ---- 1
+
+positions[4]:  { (-0.5,-0.5), (0.5,-0.5), (0.5,0.5), (-0.5,0.5) }
+indices[6]:    { 0,1,2,  2,3,0 }
+               \_____/  \_____/
+               bottom    top
+               right      left
+               triangle   triangle
+```
+
+Vertices 0 and 2 are shared — stored once, referenced twice. This matters at scale: a detailed mesh can reuse thousands of vertices.
+
+```cpp
+unsigned int ibo;
+glGenBuffers(1, &ibo);
+glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);            // different target than VBO
+glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), indices, GL_STATIC_DRAW);
+```
+
+Key differences from a VBO:
+
+- Target is `GL_ELEMENT_ARRAY_BUFFER` (not `GL_ARRAY_BUFFER`).
+- Indices **must be unsigned** — `unsigned int`, `unsigned short`, or `unsigned char`.
+- The IBO binding is stored inside the VAO — binding the VAO restores the IBO too.
+
+Drawing with an index buffer:
+
+```cpp
+glDrawElements(
+    GL_TRIANGLES,       // primitive type
+    6,                  // number of indices to consume
+    GL_UNSIGNED_INT,    // type of each index (must match what was uploaded)
+    nullptr             // offset into the IBO (nullptr = start from beginning)
 );
 ```
 
-OpenGL reads 3 vertices starting at index 0 from the currently bound VAO's attribute sources, runs the vertex shader on each, rasterizes the resulting triangle, and runs the fragment shader on every covered pixel.
-
-For non-sequential geometry (shared vertices), `glDrawElements` is used instead — it takes an **index buffer (EBO)** that lists which vertices to use in which order, avoiding duplication.
+The `nullptr` offset works because the IBO is already bound to `GL_ELEMENT_ARRAY_BUFFER`. OpenGL reads 6 indices, fetches the corresponding vertices from the VBO, and renders two triangles.
 
 ---
 
@@ -367,17 +414,19 @@ gladLoadGLLoader()              ← all gl* functions now available
     │
 glGenVertexArrays / glBindVertexArray(VAO)
     │
-glGenBuffers / glBindBuffer / glBufferData   ← upload positions to GPU
+glGenBuffers / glBindBuffer(GL_ARRAY_BUFFER) / glBufferData   ← upload positions
     │
 glVertexAttribPointer / glEnableVertexAttribArray  ← describe layout
     │
+glGenBuffers / glBindBuffer(GL_ELEMENT_ARRAY_BUFFER) / glBufferData  ← upload indices
+    │                                                                    (VAO records this)
 CompileShader(vertex) + CompileShader(fragment)
     │
 CreateShader → glLinkProgram → glUseProgram
     │
 ── render loop ──
     glClear(GL_COLOR_BUFFER_BIT)
-    glDrawArrays(GL_TRIANGLES, 0, 3)
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr)
     glfwSwapBuffers()
     glfwPollEvents()
 ── end loop ──

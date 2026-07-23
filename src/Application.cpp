@@ -159,14 +159,23 @@ int main(void)
 	glBindVertexArray(VAO);
 
 	// clang-format off
+	/* 
+		The rectangle we want to draw
+		3 ---- 2
+		 |    |
+		 |    |
+		0 ---- 1
+	*/
 	float positions[] = {
-			-0.5f,-0.5f,
-			0.5f,-0.5f,
-			0.5f,0.5f,
-			
-			0.5f,0.5f,
-			-0.5f,0.5f,
-			-0.5f,-0.5f,
+			-0.5f,-0.5f, // index 0
+			0.5f,-0.5f, // index 1
+			0.5f,0.5f,  // index 2
+			-0.5f,0.5f,  // index 3
+	};
+	// indices can be chars or shorts, but MUST be unsigned
+	unsigned int indices[] = {
+		0,1,2, // bottom right triangle
+		2,3,0  // top left triangle
 	};
 	// clang-format on
 
@@ -184,6 +193,11 @@ int main(void)
 	// sizeof(float) * 2 is the stride (the distance between consecutive attributes)
 	// 0 is the offset (the starting point of the first attribute).
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0);
+
+	unsigned int ibo;																																					// indexed buffer object
+	glGenBuffers(1, &ibo);																																		// create a buffer and store its ID in buffer
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);																								// tells OpenGL we are working with data of this buffer
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), indices, GL_STATIC_DRAW); // upload data to the buffer. Can be done whenever (but the  buffer has to be bound)
 
 	std::string vertexSource = ParseSingleShader("res/shaders/Basic.vert");
 	std::string fragmentSource = ParseSingleShader("res/shaders/Basic.frag");
@@ -209,7 +223,11 @@ int main(void)
 		*/
 
 		// Draw triangle using OpenGL 3.3+ API
-		glDrawArrays(GL_TRIANGLES, 0, 6);
+		// glBindBuffer(GL_ARRAY_BUFFER, buffer);
+		// glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		// 6 = 6 indices
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
 		/* Swap front and back buffers */
 		glfwSwapBuffers(window);
