@@ -1,12 +1,75 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <fstream>
+#include <string>
+#include <sstream>
 // #include <gl2d/gl2d.h>
 #include <openglErrorReporting.h>
 
 static void error_callback(int error, const char *description)
 {
 	std::cout << "Error: " << description << "\n";
+}
+
+/* Parse single shader from a file with single shader */
+static std::string ParseSingleShader(const std::string &filepath)
+{
+	std::ifstream stream{filepath};
+	std::string line;
+	std::string shader;
+	while (std::getline(stream, line))
+	{
+		shader.append(line + "\n");
+	}
+	return shader;
+}
+
+struct ShaderProgramSource
+{
+	std::string VertexSource;
+	std::string FragmentSource;
+};
+/* Parse fragment and vertex shaders from single file */
+static ShaderProgramSource ParseShader(const std::string &filepath)
+{
+	std::ifstream stream{filepath};
+
+	enum class ShaderType
+	{
+		NONE = -1,
+		VERTEX = 0,
+		FRAGMENT = 1
+	};
+
+	std::string line;
+	std::stringstream ss[2];
+	ShaderType type = ShaderType::NONE;
+
+	while (getline(stream, line))
+	{
+		if (line.find("#shader") != std::string::npos)
+		{
+			if (line.find("vertex") != std::string::npos)
+			{
+				type = ShaderType::VERTEX;
+			}
+			else if (line.find("fragment") != std::string::npos)
+			{
+				type = ShaderType::FRAGMENT;
+			}
+			else
+			{
+				type = ShaderType::NONE;
+			}
+		}
+		else
+		{
+			ss[(int)type] << line << '\n';
+		}
+	}
+
+	return {ss[0].str(), ss[1].str()};
 }
 
 static unsigned int CompileShader(unsigned int type, const std::string &source)
@@ -95,15 +158,22 @@ int main(void)
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
 
-	float positions[6] = {
-			-0.5f, -0.5f,
-			0.0f, 0.5f,
-			0.5f, -0.5f};
+	// clang-format off
+	float positions[] = {
+			-0.5f,-0.5f,
+			0.5f,-0.5f,
+			0.5f,0.5f,
+			
+			0.5f,0.5f,
+			-0.5f,0.5f,
+			-0.5f,-0.5f,
+	};
+	// clang-format on
 
 	unsigned int buffer;
-	glGenBuffers(1, &buffer);																										 // create a buffer and store its ID in buffer
-	glBindBuffer(GL_ARRAY_BUFFER, buffer);																			 // tells OpenGL we are working with data of this buffer
-	glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(float), positions, GL_STATIC_DRAW); // upload data to the buffer. Can be done whenever (but the  buffer has to be bound)
+	glGenBuffers(1, &buffer);																												 // create a buffer and store its ID in buffer
+	glBindBuffer(GL_ARRAY_BUFFER, buffer);																					 // tells OpenGL we are working with data of this buffer
+	glBufferData(GL_ARRAY_BUFFER, 6 * 2 * sizeof(float), positions, GL_STATIC_DRAW); // upload data to the buffer. Can be done whenever (but the  buffer has to be bound)
 
 	glEnableVertexAttribArray(0);
 	// specify how the data is laid out in the buffer.
@@ -115,26 +185,14 @@ int main(void)
 	// 0 is the offset (the starting point of the first attribute).
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0);
 
-	std::string vertexShader =
-			"#version 330 core\n"
-			"\n"
-			"layout(location = 0) in vec4 position;\n" // location 0 corelates with 0 at glVertexAttribPointer(0,...)
-			"\n"
-			"void main()\n"
-			"{\n"
-			"	gl_Position = position;\n"
-			"}\n";
+	std::string vertexSource = ParseSingleShader("res/shaders/Basic.vert");
+	std::string fragmentSource = ParseSingleShader("res/shaders/Basic.frag");
+	unsigned int shader = CreateShader(vertexSource, fragmentSource);
 
-	std::string fragmentShader =
-			"#version 330 core\n"
-			"\n"
-			"layout(location = 0) out vec4 color;\n"
-			"\n"
-			"void main()\n"
-			"{\n"
-			"	color = vec4(1.0, 0.0, 0.0, 1.0);\n"
-			"}\n";
-	unsigned int shader = CreateShader(vertexShader, fragmentShader);
+	// with shaders in one file
+	// ShaderProgramSource source = ParseShader("res/shaders/Basic.glsl");
+	// unsigned int shader = CreateShader(source.VertexSource, source.FragmentSource);
+
 	glUseProgram(shader);
 
 	while (!glfwWindowShouldClose(window))
@@ -151,7 +209,7 @@ int main(void)
 		*/
 
 		// Draw triangle using OpenGL 3.3+ API
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 		/* Swap front and back buffers */
 		glfwSwapBuffers(window);
