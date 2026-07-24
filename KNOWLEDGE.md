@@ -107,7 +107,139 @@ Double buffering: you always draw to the **back buffer**; `glfwSwapBuffers` flip
 
 ## Error Reporting
 
-`include/openglErrorReporting.h` + `src/openglErrorReporting.cpp` wrap OpenGL's debug output extension (`GL_KHR_debug`). Calling `enableReportGlErrors()` registers `glDebugOutput` as a callback. The driver then calls it whenever an error, warning, or performance issue occurs, printing the source, type, and message. This is much better than manually calling `glGetError()` after every draw call.
+### `glGetError` — the primitive approach
+
+OpenGL does not throw exceptions. Errors are recorded internally and retrieved by polling `glGetError()`, which returns one error code per call and clears it from the queue. If you don't call it often enough, errors accumulate and you don't know which call caused what.
+
+### `GLCall` macro — per-call error checking
+
+The approach used in this project wraps every GL call in a macro that:
+
+1. Drains any pre-existing errors (so we only see errors from *this* call).
+2. Executes the call.
+3. Checks for new errors and **triggers a debugger breakpoint** at the exact callsite if any are found.
+
+```cpp
+static void GLClearError()
+{
+    while (glGetError() != GL_NO_ERROR); // drain all queued errors
+}
+
+static bool GLLogCall(const char *function, const char *file, int line)
+{
+    while (GLenum error = glGetError())
+    {
+        std::cout << "[OpenGL Error] (0x" << std::hex << error << "): "
+                  << function << " " << file << ": " << line << std::endl;
+        return false;
+    }
+    return true;
+}
+```
+
+The `GLCall` macro ties them together:
+
+```cpp
+#define GLCall(x)    \
+    GLClearError();  \
+    x;               \
+    ASSERT(GLLogCall(#x, __FILE__, __LINE__))
+```
+
+- `#x` is the **stringification operator** — the preprocessor turns the raw token `glDrawElements(...)` into the string `"glDrawElements(...)"`, which is then printed in the error message.
+- `__FILE__` and `__LINE__` are standard preprocessor macros that expand to the source file path and line number at the call site.
+- `ASSERT` triggers a debugger breakpoint so the call stack is preserved at the point of failure.
+
+In Release builds the macro compiles away entirely:
+
+```cpp
+#ifdef DEBUG
+#define GLCall(x) GLClearError(); x; ASSERT(GLLogCall(#x, __FILE__, __LINE__))
+#else
+#define GLCall(x) x   // zero overhead in release
+#endif
+```
+
+### Cross-platform `ASSERT`
+
+A breakpoint instruction is not portable — each platform has its own intrinsic:
+
+```cpp
+#if defined(_WIN32)
+#define ASSERT(x) if (!(x)) __debugbreak()      // MSVC / Windows
+#elif defined(__clang__)
+#define ASSERT(x) if (!(x)) __builtin_debugtrap() // Clang (macOS, Linux)
+#else
+#include <csignal>
+#define ASSERT(x) if (!(x)) raise(SIGTRAP)      // GCC / other POSIX
+#endif
+```
+
+All three pause the process and hand control to the attached debugger (e.g. CodeLLDB) at the exact line of the failing `GLCall`, showing you the full call stack.
+
+### `glDebugMessageCallback` — the modern alternative
+
+Available since **OpenGL 4.3** (or earlier via the `GL_KHR_debug` / `GL_ARB_debug_output` extensions on 3.x drivers that support it). Instead of polling after every call, you register a callback once and the driver invokes it automatically whenever anything noteworthy happens.
+
+**Setup** (`src/openglErrorReporting.cpp`):
+
+```cpp
+void enableReportGlErrors()
+{
+    glEnable(GL_DEBUG_OUTPUT);             // enable the debug output system
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS); // callback fires on the same thread,
+                                           // in the same call stack as the GL call
+    glDebugMessageCallback(glDebugOutput, nullptr); // register our function
+    glDebugMessageControl(
+        GL_DONT_CARE,   // source filter  — any source
+        GL_DONT_CARE,   // type filter    — any type
+        GL_DONT_CARE,   // severity filter — any severity
+        0, nullptr,     // no specific message IDs to filter
+        GL_TRUE         // enable (not suppress)
+    );
+}
+```
+
+**Callback signature**:
+
+```cpp
+void GLAPIENTRY glDebugOutput(
+    GLenum source,       // GL_DEBUG_SOURCE_API, _SHADER_COMPILER, _WINDOW_SYSTEM, ...
+    GLenum type,         // GL_DEBUG_TYPE_ERROR, _DEPRECATED_BEHAVIOR, _PERFORMANCE, ...
+    unsigned int id,     // driver-assigned message ID
+    GLenum severity,     // GL_DEBUG_SEVERITY_HIGH, _MEDIUM, _LOW, _NOTIFICATION
+    GLsizei length,      // length of message string
+    const char *message, // human-readable description from the driver
+    const void *userParam // the pointer passed to glDebugMessageCallback (nullptr here)
+)
+```
+
+`GL_DEBUG_OUTPUT_SYNCHRONOUS` is the important flag: without it the driver may call the callback from a background thread at an unpredictable time, making the call stack useless. With it, the callback fires inline, so a breakpoint inside it shows exactly which GL call triggered it.
+
+**What it reports that `glGetError` / `GLCall` cannot**:
+
+| Category | `GLCall` | `glDebugMessageCallback` |
+|---|---|---|
+| Invalid API usage | Yes | Yes |
+| Deprecated behaviour | No | Yes (`GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR`) |
+| Undefined behaviour | No | Yes (`GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR`) |
+| Performance warnings | No | Yes (`GL_DEBUG_TYPE_PERFORMANCE`) |
+| Shader compiler messages | No | Yes (`GL_DEBUG_SOURCE_SHADER_COMPILER`) |
+| Driver-internal notices | No | Yes |
+
+**Advantages over `GLCall`**:
+
+- No code changes needed at every call site — one registration covers everything.
+- Catches a much wider category of issues (deprecation, UB, performance hints).
+- The callback receives a structured message with source, type, and severity — useful for filtering (e.g. suppress `GL_DEBUG_SEVERITY_NOTIFICATION` spam).
+
+**Disadvantages**:
+
+- Requires OpenGL 4.3 or the extension. Not available on all macOS hardware/drivers (macOS caps at 4.1).
+- Without `GL_DEBUG_OUTPUT_SYNCHRONOUS` the call stack is broken — but enabling synchronous mode adds some overhead.
+- Does not give you the file/line of your own source code — only the driver message. `GLCall` points you to the exact `GLCall(...)` line in your `.cpp`.
+
+**Typical usage**: enable `glDebugMessageCallback` in debug builds for broad coverage, and keep `GLCall` on the most error-prone new code where you want exact source locations pinpointed.
 
 ---
 
