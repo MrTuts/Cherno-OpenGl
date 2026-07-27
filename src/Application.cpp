@@ -174,9 +174,9 @@ int main(void)
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 #ifdef __APPLE__
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 #endif
 
 	GLFWwindow *window;
@@ -209,11 +209,6 @@ int main(void)
 
 	/* Draw */
 
-	// From YT comment "Modern OpenGL requires a VAO be defined and bound if you are using the core profile"
-	unsigned int VAO;
-	GLCall(glGenVertexArrays(1, &VAO));
-	GLCall(glBindVertexArray(VAO));
-
 	// clang-format off
 	/* 
 		The rectangle we want to draw
@@ -235,13 +230,24 @@ int main(void)
 	};
 	// clang-format on
 
+	// When using core profile, we need to create vertex array buffer
+	// With compatibility profile, there is one vao created that stores everything. Since it stores everything,
+	// all attrib layouts need to be re-specified every time together with the array buffer
+	// --
+	// This allows us to bind the array buffer and set a layout to it (vertex attributes)
+	unsigned int vao;
+	GLCall(glGenVertexArrays(1, &vao));
+	GLCall(glBindVertexArray(vao));
+
 	unsigned int buffer;
 	GLCall(glGenBuffers(1, &buffer));																												 // create a buffer and store its ID in buffer
 	GLCall(glBindBuffer(GL_ARRAY_BUFFER, buffer));																					 // tells OpenGL we are working with data of this buffer
-	GLCall(glBufferData(GL_ARRAY_BUFFER, 6 * 2 * sizeof(float), positions, GL_STATIC_DRAW)); // upload data to the buffer. Can be done whenever (but the  buffer has to be bound)
+	GLCall(glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(float), positions, GL_STATIC_DRAW)); // upload data to the buffer. Can be done whenever (but the  buffer has to be bound)
 
 	GLCall(glEnableVertexAttribArray(0));
 	// specify how the data is laid out in the buffer.
+	// This code technically links the array buffer with vao
+	// params
 	// 0 is the index of the attribute,
 	// 2 is the number of components,
 	// GL_FLOAT is the type of each component,
@@ -272,6 +278,13 @@ int main(void)
 	ASSERT(uColorLocation != -1);
 	// assign value to uColorLocation
 	GLCall(glUniform4f(uColorLocation, 0.8f, 0.3f, 0.8f, 1.0f));
+
+	// unbind everything for the purpose of showing how to re-bind everything again
+	GLCall(glBindVertexArray(0));
+	GLCall(glUseProgram(0));
+	GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
+	GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
+
 	float r = 0.0f;
 	float increment = 0.05;
 
@@ -292,6 +305,17 @@ int main(void)
 		// glBindBuffer(GL_ARRAY_BUFFER, buffer);
 		// glDrawArrays(GL_TRIANGLES, 0, 6);
 
+		// rebind everything
+		GLCall(glUseProgram(shader));
+		GLCall(glBindVertexArray(vao));
+		// no need to bind vertex buffer and specify the attributes layout, that is already linked with the vao
+		GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo));
+
+		// assign value to uColorLocation
+		GLCall(glUniform4f(uColorLocation, r, 0.3f, 0.8f, 1.0f));
+		// 6 = 6 indices
+		GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
+
 		if (r > 1.0f)
 		{
 			increment = -0.05;
@@ -301,10 +325,6 @@ int main(void)
 			increment = 0.05;
 		}
 		r += increment;
-		// assign value to uColorLocation
-		GLCall(glUniform4f(uColorLocation, r, 0.3f, 0.8f, 1.0f));
-		// 6 = 6 indices
-		GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
 
 		/* Swap front and back buffers */
 		glfwSwapBuffers(window);

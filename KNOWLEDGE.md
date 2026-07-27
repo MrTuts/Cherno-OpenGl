@@ -103,6 +103,24 @@ while (!glfwWindowShouldClose(window))
 
 Double buffering: you always draw to the **back buffer**; `glfwSwapBuffers` flips it to the screen atomically so you never see a half-drawn frame.
 
+### `glfwSwapInterval` — VSync control
+
+```cpp
+glfwSwapInterval(1); // call after glfwMakeContextCurrent
+```
+
+Controls how many monitor refreshes the driver waits before swapping buffers:
+
+| Value | Behaviour |
+|---|---|
+| `0` | No wait — swap as fast as possible (uncapped FPS, may tear) |
+| `1` | Wait for 1 refresh — locks to monitor refresh rate (VSync on) |
+| `2` | Wait for 2 refreshes — locks to half the refresh rate |
+
+This project uses `1` (VSync on), which prevents screen tearing and also keeps the render loop from burning 100 % CPU spinning at thousands of FPS when drawing a static scene. Without it the loop runs uncapped and `glfwPollEvents` / `glDrawElements` execute as fast as the CPU allows.
+
+> `glfwSwapInterval` applies to the **current context** at call time — it must be called after `glfwMakeContextCurrent`. It delegates to the platform swap-interval extension (`WGL_EXT_swap_control` on Windows, `GLX_EXT_swap_control` on Linux, `NSOpenGLCPSwapInterval` on macOS). Drivers are allowed to ignore the request (e.g. when the user forces VSync off in driver settings).
+
 ---
 
 ## Error Reporting
@@ -356,6 +374,52 @@ In Core Profile a VAO **must** be bound before any draw call. The driver rejects
 
 - The actual vertex data (that lives in the VBO)
 - Shader / program state
+
+### Single global VAO vs one VAO per mesh
+
+**Compatibility Profile default (single implicit VAO)**
+Older drivers and the Compatibility Profile silently provide one default VAO. All attribute calls go into it. When you draw a different mesh you must re-call `glBindBuffer` + `glVertexAttribPointer` to overwrite the stored layout before every draw call.
+
+**Core Profile requirement + typical modern usage (one VAO per mesh)**
+Core Profile has no default VAO — you must create at least one. The idiomatic pattern is one VAO per mesh:
+
+```
+Setup:
+  for each mesh:
+    glGenVertexArrays → glBindVertexArray(vaoA)
+    glBindBuffer(GL_ARRAY_BUFFER, vboA)
+    glVertexAttribPointer(...)   ← recorded into vaoA
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, iboA)  ← also recorded
+
+Render loop:
+  glBindVertexArray(vaoA)   ← restores vboA binding + all attribute state
+  glDrawElements(...)       ← no re-specification needed
+
+  glBindVertexArray(vaoB)   ← switch to a different mesh in one call
+  glDrawElements(...)
+```
+
+This project demonstrates the difference explicitly — after setup everything is unbound (`glBindVertexArray(0)`, `glUseProgram(0)`, etc.) and the render loop re-binds only the VAO and IBO before drawing:
+
+```cpp
+// render loop — attributes do NOT need to be re-specified
+GLCall(glUseProgram(shader));
+GLCall(glBindVertexArray(vao));
+GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo)); // IBO is NOT stored in VAO on all drivers
+GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
+```
+
+> **Note:** The IBO (`GL_ELEMENT_ARRAY_BUFFER`) binding *is* part of VAO state per spec, but some older drivers do not reliably restore it. Re-binding it explicitly before drawing is a safe habit.
+
+**Performance — single vs multiple VAOs**
+
+`glVertexAttribPointer` is not free — it validates arguments and writes into driver-internal structures. Re-calling it before every draw is measurably slower than a single `glBindVertexArray` switch:
+
+- The Khronos wiki's [Vertex Specification Best Practices](https://www.khronos.org/opengl/wiki/Vertex_Specification_Best_Practices) explicitly recommends one VAO per mesh and treating `glVertexAttribPointer` as setup-time work.
+- NVIDIA's and AMD's "Approaching Zero Driver Overhead" (AZDO) GDC 2014/2015 talks identify redundant state changes (including attribute re-specification) as a primary CPU-side bottleneck. Slides: [NVIDIA AZDO](https://developer.nvidia.com/sites/default/files/akamai/opengl/specs/GL_ARB_multi_draw_indirect.txt) / [GDC Vault recording](https://gdcvault.com/play/1020791/).
+- A practical micro-benchmark by Fabian "ryg" Giesen and Rich Geldreich's driver overhead posts confirm that driver-side validation in `glVertexAttribPointer` contributes more latency than a simple VAO bind.
+
+In short: **one VAO per mesh** is both more readable and faster at runtime.
 
 ---
 
