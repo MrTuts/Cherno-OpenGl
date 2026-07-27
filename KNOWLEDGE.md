@@ -298,6 +298,7 @@ glBufferData(
 ```
 
 `GL_STATIC_DRAW` is a **hint** to the driver about how often the data changes and in which direction:
+
 - `STATIC` — set once, used many times
 - `DYNAMIC` — changed often, used many times
 - `STREAM` — set once, used a few times
@@ -346,11 +347,13 @@ glBindVertexArray(VAO);         // start recording
 In Core Profile a VAO **must** be bound before any draw call. The driver rejects draws without one.
 
 **VAO stores:**
+
 - Which VBO each attribute comes from
 - The format of each attribute (count, type, stride, offset)
 - Which attribute indices are enabled
 
 **VAO does NOT store:**
+
 - The actual vertex data (that lives in the VBO)
 - Shader / program state
 
@@ -514,7 +517,73 @@ The `nullptr` offset works because the IBO is already bound to `GL_ELEMENT_ARRAY
 
 ---
 
-## Rendering Pipeline (simplified)
+## Uniforms
+
+Uniforms are **CPU-to-shader variables** — values you set once from C++ that every shader invocation can read. Unlike vertex attributes (which differ per vertex), a uniform has the same value across all vertices and fragments in a single draw call.
+
+### Declaring a uniform in GLSL
+
+```glsl
+// Basic.frag
+uniform vec4 u_Color; // convention: prefix with u_
+```
+
+The `uniform` keyword makes the variable visible across all shader stages in the same program.
+
+### Setting a uniform from C++
+
+```cpp
+// 1. look up the location by name — do this ONCE after glUseProgram, store the result
+GLCall(int uColorLocation = glGetUniformLocation(shader, "u_Color"));
+
+// -1 means the uniform was not found (or was optimised away by the driver)
+ASSERT(uColorLocation != -1);
+
+// 2. upload the value — shader must be currently bound with glUseProgram
+GLCall(glUniform4f(uColorLocation, 0.8f, 0.3f, 0.8f, 1.0f)); // r, g, b, a
+```
+
+**Important**: `glGetUniformLocation` queries by string name. Even if the uniform is declared in the shader, the driver may **silently remove** it if its value is never actually used in the output. Always check for `-1`.
+
+### Updating a uniform every frame
+
+A uniform can be changed as often as needed — including inside the render loop:
+
+```cpp
+float r = 0.0f;
+float increment = 0.05f;
+
+while (!glfwWindowShouldClose(window))
+{
+    // animate r between 0 and 1
+    if (r > 1.0f) increment = -0.05f;
+    else if (r < 0.0f) increment = 0.05f;
+    r += increment;
+
+    GLCall(glUniform4f(uColorLocation, r, 0.3f, 0.8f, 1.0f));
+    GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
+    // ...
+}
+```
+
+Each `glUniform*` call overwrites the stored value for that location. The new value takes effect on the next draw call.
+
+### `glUniform` type suffix
+
+The function name encodes the type being uploaded:
+
+| Function | GLSL type | Description |
+|---|---|---|
+| `glUniform1f(loc, x)` | `float` | 1 float |
+| `glUniform2f(loc, x, y)` | `vec2` | 2 floats |
+| `glUniform3f(loc, x, y, z)` | `vec3` | 3 floats |
+| `glUniform4f(loc, x, y, z, w)` | `vec4` | 4 floats |
+| `glUniform1i(loc, x)` | `int` / `sampler2D` | 1 integer (used for texture slots) |
+| `glUniformMatrix4fv(loc, 1, GL_FALSE, ptr)` | `mat4` | 4×4 matrix |
+
+### Performance note
+
+`glGetUniformLocation` is a string lookup — do it **once** at setup and cache the integer location. Calling it every frame wastes CPU cycles.
 
 ```
 CPU uploads vertex data to VBO

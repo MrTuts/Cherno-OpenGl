@@ -180,7 +180,7 @@ int main(void)
 #endif
 
 	GLFWwindow *window;
-	window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
+	window = glfwCreateWindow(640, 480, "Cherno series", NULL, NULL);
 	if (!window)
 	{
 		glfwTerminate();
@@ -188,6 +188,8 @@ int main(void)
 	}
 
 	glfwMakeContextCurrent(window);
+	glfwSwapInterval(1);
+
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
 		glfwTerminate();
@@ -263,6 +265,16 @@ int main(void)
 
 	GLCall(glUseProgram(shader));
 
+	// when shader is created, OpenGL assigns id to every uniform variable, here we retrieve that location
+	GLCall(int uColorLocation = glGetUniformLocation(shader, "u_Color"));
+	// Check uniform was found
+	// Even if we specify the uniform in shader, but we do not use the value, OpenGL may strip the value away!
+	ASSERT(uColorLocation != -1);
+	// assign value to uColorLocation
+	GLCall(glUniform4f(uColorLocation, 0.8f, 0.3f, 0.8f, 1.0f));
+	float r = 0.0f;
+	float increment = 0.05;
+
 	while (!glfwWindowShouldClose(window))
 	{
 		GLCall(glClear(GL_COLOR_BUFFER_BIT));
@@ -280,6 +292,17 @@ int main(void)
 		// glBindBuffer(GL_ARRAY_BUFFER, buffer);
 		// glDrawArrays(GL_TRIANGLES, 0, 6);
 
+		if (r > 1.0f)
+		{
+			increment = -0.05;
+		}
+		else if (r < 0.0f)
+		{
+			increment = 0.05;
+		}
+		r += increment;
+		// assign value to uColorLocation
+		GLCall(glUniform4f(uColorLocation, r, 0.3f, 0.8f, 1.0f));
 		// 6 = 6 indices
 		GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
 
