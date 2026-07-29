@@ -9,6 +9,7 @@
 #include "Renderer.h"
 #include "IndexBuffer.h"
 #include "VertexBuffer.h"
+#include "VertexArray.h"
 
 static void GLFW_error_callback(int error, const char *description)
 {
@@ -201,23 +202,12 @@ int main(void)
 		// all attrib layouts need to be re-specified every time together with the array buffer
 		// --
 		// This allows us to bind the array buffer and set a layout to it (vertex attributes)
-		unsigned int vao;
-		GLCall(glGenVertexArrays(1, &vao));
-		GLCall(glBindVertexArray(vao));
-
+		VertexArray va;
 		VertexBuffer vb{positions, 4 * 2 * sizeof(float)};
 
-		GLCall(glEnableVertexAttribArray(0));
-		// specify how the data is laid out in the buffer.
-		// This code technically links the array buffer with vao
-		// params
-		// 0 is the index of the attribute,
-		// 2 is the number of components,
-		// GL_FLOAT is the type of each component,
-		// GL_FALSE means we don't want to normalize the data (transforming 0-255 to 0-1),
-		// sizeof(float) * 2 is the stride (the distance between consecutive attributes)
-		// 0 is the offset (the starting point of the first attribute).
-		GLCall(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0));
+		VertexBufferLayout layout;
+		layout.Push<float>(2);
+		va.Addbuffer(vb, layout);
 
 		IndexBuffer ib{indices, 6};
 
@@ -236,7 +226,7 @@ int main(void)
 		GLCall(glUniform4f(uColorLocation, 0.8f, 0.3f, 0.8f, 1.0f));
 
 		// unbind everything for the purpose of showing how to re-bind everything again
-		GLCall(glBindVertexArray(0));
+		va.Unbind();
 		GLCall(glUseProgram(0));
 		vb.Unbind();
 		ib.Unbind();
@@ -263,7 +253,7 @@ int main(void)
 
 			// rebind everything
 			GLCall(glUseProgram(shader));
-			GLCall(glBindVertexArray(vao));
+			va.Bind();
 			// no need to bind vertex buffer and specify the attributes layout, that is already linked with the vao
 			ib.Bind();
 
