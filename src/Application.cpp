@@ -1,125 +1,18 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
-#include <fstream>
 #include <string>
-#include <sstream>
 // #include <gl2d/gl2d.h>
 #include <openglErrorReporting.h>
 #include "Renderer.h"
 #include "IndexBuffer.h"
 #include "VertexBuffer.h"
 #include "VertexArray.h"
+#include "Shader.h"
 
 static void GLFW_error_callback(int error, const char *description)
 {
 	std::cout << "Error: " << description << "\n";
-}
-
-/* Parse single shader from a file with single shader */
-static std::string ParseSingleShader(const std::string &filepath)
-{
-	std::ifstream stream{filepath};
-	std::string line;
-	std::string shader;
-	while (std::getline(stream, line))
-	{
-		shader.append(line + "\n");
-	}
-	return shader;
-}
-
-struct ShaderProgramSource
-{
-	std::string VertexSource;
-	std::string FragmentSource;
-};
-/* Parse fragment and vertex shaders from single file */
-static ShaderProgramSource ParseShader(const std::string &filepath)
-{
-	std::ifstream stream{filepath};
-
-	enum class ShaderType
-	{
-		NONE = -1,
-		VERTEX = 0,
-		FRAGMENT = 1
-	};
-
-	std::string line;
-	std::stringstream ss[2];
-	ShaderType type = ShaderType::NONE;
-
-	while (getline(stream, line))
-	{
-		if (line.find("#shader") != std::string::npos)
-		{
-			if (line.find("vertex") != std::string::npos)
-			{
-				type = ShaderType::VERTEX;
-			}
-			else if (line.find("fragment") != std::string::npos)
-			{
-				type = ShaderType::FRAGMENT;
-			}
-			else
-			{
-				type = ShaderType::NONE;
-			}
-		}
-		else
-		{
-			ss[(int)type] << line << '\n';
-		}
-	}
-
-	return {ss[0].str(), ss[1].str()};
-}
-
-static unsigned int CompileShader(unsigned int type, const std::string &source)
-{
-	GLCall(unsigned int id = glCreateShader(type));
-	const char *src = source.c_str(); // pointer to the beginning of our data. Alternative &source[0]
-	GLCall(glShaderSource(id, 1, &src, nullptr));
-	GLCall(glCompileShader(id));
-
-	// /* Error handling */
-	int result;
-	GLCall(glGetShaderiv(id, GL_COMPILE_STATUS, &result));
-	// GL_FALSE is just 0, so we could also write if(!result){...}
-	if (result == GL_FALSE)
-	{
-		int length;
-		GLCall(glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length));
-		// char message[length];
-		// alloca allows to allocate on stack dynamically. C++ may complain about allocating memory on stack with variable length `char message[length]`.
-		char *message = (char *)alloca(length * sizeof(char));
-		GLCall(glGetShaderInfoLog(id, length, &length, message));
-		std::cout << "Failed to compile " << (type == GL_VERTEX_SHADER ? "vertex" : "fragment") << " shader!" << std::endl;
-		std::cout << message << std::endl;
-		GLCall(glDeleteShader(id));
-		return 0;
-	}
-
-	return id;
-}
-
-static unsigned int CreateShader(const std::string &vertexShader, const std::string &fragmentShader)
-{
-	GLCall(unsigned int program = glCreateProgram());
-	unsigned int vs = CompileShader(GL_VERTEX_SHADER, vertexShader);
-	unsigned int fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShader);
-
-	GLCall(glAttachShader(program, vs));
-	GLCall(glAttachShader(program, fs));
-	GLCall(glLinkProgram(program));
-	GLCall(glValidateProgram(program));
-
-	// The program is created, we can delete intermediate shaders (like .obj files)
-	GLCall(glDeleteShader(vs));
-	GLCall(glDeleteShader(fs));
-
-	return program;
 }
 
 int main(void)
@@ -166,10 +59,6 @@ int main(void)
 			enableReportGlErrors();
 	}
 
-	std::string vertexSource = ParseSingleShader("res/shaders/Basic.vert");
-	std::string fragmentSource = ParseSingleShader("res/shaders/Basic.frag");
-	unsigned int shader = CreateShader(vertexSource, fragmentSource);
-
 	/* Draw */
 	/*
 		We scope the code so `ib` and `vb` are deleted before we call `glfwTerminate()`,
@@ -212,22 +101,14 @@ int main(void)
 		IndexBuffer ib{indices, 6};
 
 		// with shaders in one file
-		// ShaderProgramSource source = ParseShader("res/shaders/Basic.glsl");
-		// unsigned int shader = CreateShader(source.VertexSource, source.FragmentSource);
-
-		GLCall(glUseProgram(shader));
-
-		// when shader is created, OpenGL assigns id to every uniform variable, here we retrieve that location
-		GLCall(int uColorLocation = glGetUniformLocation(shader, "u_Color"));
-		// Check uniform was found
-		// Even if we specify the uniform in shader, but we do not use the value, OpenGL may strip the value away!
-		ASSERT(uColorLocation != -1);
-		// assign value to uColorLocation
-		GLCall(glUniform4f(uColorLocation, 0.8f, 0.3f, 0.8f, 1.0f));
+		// Shader shader{"res/shaders/Basic.glsl"};
+		Shader shader{"res/shaders/Basic.vert", "res/shaders/Basic.frag"};
+		shader.Bind();
+		shader.SetUniform4f("u_Color", 0.8f, 0.3f, 0.8f, 1.0f);
 
 		// unbind everything for the purpose of showing how to re-bind everything again
 		va.Unbind();
-		GLCall(glUseProgram(0));
+		shader.Unbind();
 		vb.Unbind();
 		ib.Unbind();
 
@@ -252,13 +133,13 @@ int main(void)
 			// glDrawArrays(GL_TRIANGLES, 0, 6);
 
 			// rebind everything
-			GLCall(glUseProgram(shader));
+			shader.Bind();
 			va.Bind();
 			// no need to bind vertex buffer and specify the attributes layout, that is already linked with the vao
 			ib.Bind();
 
 			// assign value to uColorLocation
-			GLCall(glUniform4f(uColorLocation, r, 0.3f, 0.8f, 1.0f));
+			shader.SetUniform4f("u_Color", r, 0.3f, 0.8f, 1.0f);
 			// 6 = 6 indices
 			GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
 
@@ -281,7 +162,6 @@ int main(void)
 	}
 
 	// cleanup
-	GLCall(glDeleteProgram(shader));
 	glfwDestroyWindow(window);
 	glfwTerminate();
 	return 0;
