@@ -7,6 +7,7 @@
 #include "Renderer.h"
 #include "IndexBuffer.h"
 #include "VertexBuffer.h"
+#include "VertexBufferLayout.h"
 #include "VertexArray.h"
 #include "Shader.h"
 
@@ -59,13 +60,7 @@ int main(void)
 			enableReportGlErrors();
 	}
 
-	/* Draw */
-	/*
-		We scope the code so `ib` and `vb` are deleted before we call `glfwTerminate()`,
-		which could result in an error (OpenGL would not be accessible anymore and GLCall would loop on error)
-	*/
-	{
-		// clang-format off
+	// clang-format off
 	/* 
 		The rectangle we want to draw
 		3 ---- 2
@@ -84,8 +79,14 @@ int main(void)
 		0,1,2, // bottom right triangle
 		2,3,0  // top left triangle
 	};
-		// clang-format on
+	// clang-format on
 
+	/* Draw */
+	/*
+		We scope the code so `ib` and `vb` are deleted before we call `glfwTerminate()`,
+		which could result in an error (OpenGL would not be accessible anymore and GLCall would loop on error)
+	*/
+	{
 		// When using core profile, we need to create vertex array buffer
 		// With compatibility profile, there is one vao created that stores everything. Since it stores everything,
 		// all attrib layouts need to be re-specified every time together with the array buffer
@@ -98,6 +99,7 @@ int main(void)
 		layout.Push<float>(2);
 		va.Addbuffer(vb, layout);
 
+		// 6 = 6 indices
 		IndexBuffer ib{indices, 6};
 
 		// with shaders in one file
@@ -115,33 +117,15 @@ int main(void)
 		float r = 0.0f;
 		float increment = 0.05;
 
+		Renderer renderer;
 		while (!glfwWindowShouldClose(window))
 		{
-			GLCall(glClear(GL_COLOR_BUFFER_BIT));
+			renderer.Clear();
 
-			// Draw triangle using legacy API
-			/*
-			glBegin(GL_TRIANGLES);
-			glVertex2f(-0.5f, -0.5f);
-			glVertex2f(0.0f, 0.5f);
-			glVertex2f(0.5f, -0.5f);
-			glEnd();
-			*/
-
-			// Draw triangle using OpenGL 3.3+ API
-			// glBindBuffer(GL_ARRAY_BUFFER, buffer);
-			// glDrawArrays(GL_TRIANGLES, 0, 6);
-
-			// rebind everything
 			shader.Bind();
-			va.Bind();
-			// no need to bind vertex buffer and specify the attributes layout, that is already linked with the vao
-			ib.Bind();
-
-			// assign value to uColorLocation
 			shader.SetUniform4f("u_Color", r, 0.3f, 0.8f, 1.0f);
-			// 6 = 6 indices
-			GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
+
+			renderer.Draw(va, ib, shader);
 
 			if (r > 1.0f)
 			{

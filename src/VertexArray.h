@@ -1,7 +1,9 @@
 #pragma once
 
 #include "VertexBuffer.h"
-#include "VertexBufferLayout.h"
+
+// avoid include cycle
+class VertexBufferLayout;
 
 class VertexArray
 {

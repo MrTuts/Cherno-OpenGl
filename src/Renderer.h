@@ -1,6 +1,9 @@
 #pragma once
 
 #include <glad/glad.h>
+#include "VertexArray.h"
+#include "IndexBuffer.h"
+#include "Shader.h"
 
 /* break the code execution when x assertion fails */
 #if defined(_WIN32)
@@ -30,3 +33,10 @@
 
 void GLClearError();
 bool GLLogCall(const char *function, const char *file, int line);
+
+class Renderer
+{
+public:
+  void Clear() const;
+  void Draw(const VertexArray &va, const IndexBuffer &ib, const Shader &shader) const;
+};
