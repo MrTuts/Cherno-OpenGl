@@ -783,23 +783,6 @@ shader.SetUniform1i("u_Texture", 0);
 
 Rule: sampler value is the **texture unit index**, not texture object ID.
 
-### 6. Alpha blending for PNG textures
-
-Because PNG may contain alpha, blending is enabled:
-
-```cpp
-glEnable(GL_BLEND);
-glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-```
-
-This computes final color as:
-
-$$
-C_{out} = C_{src} \cdot A_{src} + C_{dst} \cdot (1 - A_{src})
-$$
-
-Without blending, transparent pixels from the texture would be drawn as fully opaque.
-
 ### Common texture pitfalls
 
 - Binding texture but forgetting `SetUniform1i("u_Texture", slot)`
@@ -807,6 +790,65 @@ Without blending, transparent pixels from the texture would be drawn as fully op
 - Image appears upside-down (missing STB vertical flip)
 - Using alpha texture without enabling blending
 - Setting sampler uniform before shader is bound
+
+---
+
+## Alpha Blending
+
+OpenGL does not blend by default — every fragment written to the framebuffer simply replaces what was there. Blending must be explicitly enabled and configured.
+
+```cpp
+glEnable(GL_BLEND);
+glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+```
+
+### `glBlendFunc` — source and destination factors
+
+`glBlendFunc(sfactor, dfactor)` tells OpenGL what to multiply the **source** color (the fragment being drawn) and the **destination** color (what is already in the framebuffer) by before combining them.
+
+The general formula per channel is determined by `glBlendEquation`, which defaults to `GL_FUNC_ADD`:
+
+$$
+C_{out} = C_{src} \cdot f_{src} + C_{dst} \cdot f_{dst}
+$$
+
+**Default** (no blending effect, source always wins):
+
+```cpp
+glBlendFunc(GL_ONE, GL_ZERO);
+// R_out = R_src * 1 + R_dst * 0 = R_src
+```
+
+**Standard transparency** (used in this project):
+
+```cpp
+glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+// R_out = R_src * alpha + R_dst * (1 - alpha)
+```
+
+What this means for different alpha values:
+
+| Alpha | Result |
+|---|---|
+| `0.0` | `R_out = R_dst` — fragment fully transparent, destination shows through |
+| `1.0` | `R_out = R_src` — fragment fully opaque, destination replaced |
+| `0.1` | `R_out = R_src * 0.1 + R_dst * 0.9` — mostly destination, slight tint of source |
+
+### `glBlendEquation` — how src and dst are combined
+
+The equation operator between the two terms. Default is `GL_FUNC_ADD` (addition). Other modes:
+
+| Mode | Formula |
+|---|---|
+| `GL_FUNC_ADD` | `C_src * f + C_dst * f` (default) |
+| `GL_FUNC_SUBTRACT` | `C_src * f - C_dst * f` |
+| `GL_FUNC_REVERSE_SUBTRACT` | `C_dst * f - C_src * f` |
+| `GL_MIN` | `min(C_src, C_dst)` — factors ignored |
+| `GL_MAX` | `max(C_src, C_dst)` — factors ignored |
+
+### Important: draw order matters
+
+With standard `GL_SRC_ALPHA` blending, transparent objects must be drawn **back to front** (painter's algorithm). A transparent fragment blends against whatever is in the framebuffer at that moment — if opaque geometry behind it hasn't been drawn yet, blending produces the wrong result. The depth buffer alone cannot solve this because transparent fragments still write depth and occlude geometry behind them.
 
 ---
 

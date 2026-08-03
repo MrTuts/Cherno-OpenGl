@@ -88,9 +88,22 @@ int main(void)
 		which could result in an error (OpenGL would not be accessible anymore and GLCall would loop on error)
 	*/
 	{
-		// Tells OpenGL how to deal with alpha channels (e.g. on images)
-		GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+		// enable blending
 		GLCall(glEnable(GL_BLEND));
+		/*
+			Tells OpenGL how to blend (combined) colors
+			This function tells OpenGL how to calculate the source (first arg) and destination (second arg) color
+			source is the color we want to render, destination is the color that pixel already has.
+
+			By default, this is glBlendFunc(GL_ONE, GL_ZERO);
+			This would mean for e.g. R component (in RGBA), it is (Rsrc*1) + (Rdest*0) = Rsrc -> render source, ignore destination.
+			Also that we add (+) src and dest color is determined by glBlendEquation(mode), which by default is FL_FUNC_ADD.
+			Here we set glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);,
+			which means R = (Rsrc * alpha) + (Rdest * (1-alpha)), for alpha = 0, that is R = Rdest - uses just destination,
+			for alpha 1: R = (Rsrc*1) + (Rdest*0) = Rsrc - uses just source,
+			for alpha 0.1: R = (Rsrc*0.1) + (Rdest*0.9). - combines
+		*/
+		GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
 		// When using core profile, we need to create vertex array buffer
 		// With compatibility profile, there is one vao created that stores everything. Since it stores everything,
