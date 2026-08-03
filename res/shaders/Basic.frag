@@ -2,8 +2,14 @@
 
 layout(location = 0) out vec4 color;
 
-uniform vec4 u_Color; // uniform values are prefixed with u_
+// receive data from vertex shader
+in vec2 v_TexCoord;
+
+// inputs controlled by our CPU code
+uniform vec4 u_Color;
+uniform sampler2D u_Texture;
 
 void main() {
-  color = u_Color;
+  vec4 texColor = texture(u_Texture, v_TexCoord);
+  color = texColor;
 }

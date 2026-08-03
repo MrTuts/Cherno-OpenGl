@@ -10,6 +10,7 @@
 #include "VertexBufferLayout.h"
 #include "VertexArray.h"
 #include "Shader.h"
+#include "Texture.h"
 
 static void GLFW_error_callback(int error, const char *description)
 {
@@ -68,11 +69,11 @@ int main(void)
 		 |    |
 		0 ---- 1
 	*/
-	float positions[] = {
-			-0.5f,-0.5f, // index 0
-			0.5f,-0.5f, // index 1
-			0.5f,0.5f,  // index 2
-			-0.5f,0.5f,  // index 3
+	float vertices[] = {
+			-0.5f,-0.5f, 0.0f, 0.0f, // index 0
+			0.5f,-0.5f, 1.0f, 0.0f, // index 1
+			0.5f,0.5f, 1.0f, 1.0f,  // index 2
+			-0.5f,0.5f, 0.0f, 1.0f  // index 3
 	};
 	// indices can be chars or shorts, but MUST be unsigned
 	unsigned int indices[] = {
@@ -87,16 +88,21 @@ int main(void)
 		which could result in an error (OpenGL would not be accessible anymore and GLCall would loop on error)
 	*/
 	{
+		// Tells OpenGL how to deal with alpha channels (e.g. on images)
+		GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+		GLCall(glEnable(GL_BLEND));
+
 		// When using core profile, we need to create vertex array buffer
 		// With compatibility profile, there is one vao created that stores everything. Since it stores everything,
 		// all attrib layouts need to be re-specified every time together with the array buffer
 		// --
 		// This allows us to bind the array buffer and set a layout to it (vertex attributes)
 		VertexArray va;
-		VertexBuffer vb{positions, 4 * 2 * sizeof(float)};
+		VertexBuffer vb{vertices, 4 * 4 * sizeof(float)};
 
 		VertexBufferLayout layout;
-		layout.Push<float>(2);
+		layout.Push<float>(2); // locations
+		layout.Push<float>(2); // texture coords
 		va.Addbuffer(vb, layout);
 
 		// 6 = 6 indices
@@ -107,6 +113,10 @@ int main(void)
 		Shader shader{"res/shaders/Basic.vert", "res/shaders/Basic.frag"};
 		shader.Bind();
 		shader.SetUniform4f("u_Color", 0.8f, 0.3f, 0.8f, 1.0f);
+
+		Texture texture{"res/textures/pizza.png"};
+		texture.Bind();											 // by default binds at texture slot 0
+		shader.SetUniform1i("u_Texture", 0); // 0 is the slot this texture is bound to
 
 		// unbind everything for the purpose of showing how to re-bind everything again
 		va.Unbind();

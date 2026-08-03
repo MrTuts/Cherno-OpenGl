@@ -375,6 +375,30 @@ In Core Profile a VAO **must** be bound before any draw call. The driver rejects
 - The actual vertex data (that lives in the VBO)
 - Shader / program state
 
+### What is a mesh?
+
+A mesh is one renderable piece of geometry: vertex data plus optional indices that define triangles.
+
+In practice, a mesh usually means:
+
+- A VBO with vertex attributes (position, normal, UV, etc.)
+- Often an IBO/EBO with triangle indices
+- A VAO that describes how to read the vertex data
+
+Think of it as one "draw-ready object part".
+
+Real-world examples:
+
+- A player character model is often split into multiple meshes: body, helmet, weapon.
+- A car can be split into chassis mesh, wheel mesh, glass mesh.
+- A building can be split into wall mesh, window mesh, roof mesh.
+
+Why split into multiple meshes instead of one giant mesh:
+
+- Different materials/shaders per part (metal vs glass)
+- Selective rendering (hide helmet, animate wheels)
+- Better culling and batching decisions by the engine
+
 ### Single global VAO vs one VAO per mesh
 
 **Compatibility Profile default (single implicit VAO)**
@@ -649,6 +673,145 @@ The function name encodes the type being uploaded:
 
 `glGetUniformLocation` is a string lookup — do it **once** at setup and cache the integer location. Calling it every frame wastes CPU cycles.
 
+---
+
+## Texture Mapping
+
+Your current app uses a 2D texture (`res/textures/pizza.png`) mapped onto a rectangle.
+
+### 1. Vertex data now includes UV coordinates
+
+Each vertex contains 4 floats:
+
+- `x, y` position
+- `u, v` texture coordinate
+
+Example layout used in the app:
+
+```cpp
+float vertices[] = {
+    -0.5f, -0.5f, 0.0f, 0.0f,
+     0.5f, -0.5f, 1.0f, 0.0f,
+     0.5f,  0.5f, 1.0f, 1.0f,
+    -0.5f,  0.5f, 0.0f, 1.0f
+};
+```
+
+`u` and `v` are normalized coordinates in $[0,1]$ across the texture image.
+
+### 2. Vertex attribute layout uses two attributes
+
+With your wrapper classes this becomes:
+
+```cpp
+VertexBufferLayout layout;
+layout.Push<float>(2); // location 0: position
+layout.Push<float>(2); // location 1: texCoord
+va.Addbuffer(vb, layout);
+```
+
+Equivalent raw OpenGL idea:
+
+```cpp
+// location 0: position (x, y)
+glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (const void*)0);
+glEnableVertexAttribArray(0);
+
+// location 1: texCoord (u, v)
+glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (const void*)(2 * sizeof(float)));
+glEnableVertexAttribArray(1);
+```
+
+### 3. Shader pipeline for textures
+
+In the vertex shader:
+
+- `layout(location = 1) in vec2 texCoord;`
+- pass it to fragment shader via `out vec2 v_TexCoord;`
+
+In the fragment shader:
+
+- receive `in vec2 v_TexCoord;`
+- sample from `uniform sampler2D u_Texture;`
+
+```glsl
+vec4 texColor = texture(u_Texture, v_TexCoord);
+color = texColor;
+```
+
+This means final color currently comes fully from the texture sample (not from `u_Color`).
+
+### 4. Texture object creation and upload
+
+Your `Texture` class does the full setup:
+
+- loads image bytes via `stbi_load(..., 4)` forcing RGBA
+- flips image vertically with `stbi_set_flip_vertically_on_load(1)`
+- creates and binds `GL_TEXTURE_2D`
+- sets filtering and wrapping
+- uploads data using `glTexImage2D`
+
+```cpp
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+```
+
+### 5. Texture unit binding and sampler uniform
+
+Textures are bound to texture units (`GL_TEXTURE0`, `GL_TEXTURE1`, ...).
+
+Your bind call:
+
+```cpp
+texture.Bind(); // defaults to slot 0
+```
+
+internally does:
+
+```cpp
+glActiveTexture(GL_TEXTURE0 + slot);
+glBindTexture(GL_TEXTURE_2D, rendererId);
+```
+
+Then you connect sampler uniform to that slot:
+
+```cpp
+shader.SetUniform1i("u_Texture", 0);
+```
+
+Rule: sampler value is the **texture unit index**, not texture object ID.
+
+### 6. Alpha blending for PNG textures
+
+Because PNG may contain alpha, blending is enabled:
+
+```cpp
+glEnable(GL_BLEND);
+glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+```
+
+This computes final color as:
+
+$$
+C_{out} = C_{src} \cdot A_{src} + C_{dst} \cdot (1 - A_{src})
+$$
+
+Without blending, transparent pixels from the texture would be drawn as fully opaque.
+
+### Common texture pitfalls
+
+- Binding texture but forgetting `SetUniform1i("u_Texture", slot)`
+- Wrong UV attribute offset/stride
+- Image appears upside-down (missing STB vertical flip)
+- Using alpha texture without enabling blending
+- Setting sampler uniform before shader is bound
+
+---
+
+## Rendering Pipeline (simplified)
+
 ```
 CPU uploads vertex data to VBO
         │
@@ -679,15 +842,21 @@ gladLoadGLLoader()              ← all gl* functions now available
     │
 glGenVertexArrays / glBindVertexArray(VAO)
     │
-glGenBuffers / glBindBuffer(GL_ARRAY_BUFFER) / glBufferData   ← upload positions
+glGenBuffers / glBindBuffer(GL_ARRAY_BUFFER) / glBufferData   ← upload positions + UVs
     │
-glVertexAttribPointer / glEnableVertexAttribArray  ← describe layout
+glVertexAttribPointer / glEnableVertexAttribArray  ← describe location 0 (pos), 1 (uv)
     │
 glGenBuffers / glBindBuffer(GL_ELEMENT_ARRAY_BUFFER) / glBufferData  ← upload indices
     │                                                                    (VAO records this)
 CompileShader(vertex) + CompileShader(fragment)
     │
 CreateShader → glLinkProgram → glUseProgram
+    │
+Texture load (stb_image) → glTexImage2D → texture.Bind(slot 0)
+    │
+SetUniform1i("u_Texture", 0)
+    │
+glEnable(GL_BLEND) + glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
     │
 ── render loop ──
     glClear(GL_COLOR_BUFFER_BIT)
