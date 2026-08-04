@@ -140,6 +140,14 @@ void Shader::SetUniform4f(const std::string &name, float v0, float v1, float v2,
   GLCall(glUniform4f(GetUniformLocation(name), v0, v1, v2, v3));
 }
 
+void Shader::SetUniformMat4f(const std::string &name, const glm::mat4 matrix)
+{
+  // 1 - number of matrices we want to send
+  // GL_FALSE - whether we want to transpose the matrix or not. OpenGL expects column-major order, glm uses column-major order by default, so we do not want to transpose it.
+  // &matrix[0][0] - pointer to the first element
+  GLCall(glUniformMatrix4fv(GetUniformLocation(name), 1, GL_FALSE, &matrix[0][0]));
+}
+
 void Shader::SetUniform1i(const std::string &name, int value)
 {
   GLCall(glUniform1i(GetUniformLocation(name), value));

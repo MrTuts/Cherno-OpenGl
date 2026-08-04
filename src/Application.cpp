@@ -12,6 +12,9 @@
 #include "Shader.h"
 #include "Texture.h"
 
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+
 static void GLFW_error_callback(int error, const char *description)
 {
 	std::cout << "Error: " << description << "\n";
@@ -70,10 +73,10 @@ int main(void)
 		0 ---- 1
 	*/
 	float vertices[] = {
-			-0.5f,-0.5f, 0.0f, 0.0f, // index 0
-			0.5f,-0.5f, 1.0f, 0.0f, // index 1
-			0.5f,0.5f, 1.0f, 1.0f,  // index 2
-			-0.5f,0.5f, 0.0f, 1.0f  // index 3
+			240.0f,180.0f, 0.0f, 0.0f, // index 0
+			380.0f,180.0f, 1.0f, 0.0f, // index 1
+			380.0f,300.0f, 1.0f, 1.0f,  // index 2
+			240.0f,300.0f, 0.0f, 1.0f  // index 3
 	};
 	// indices can be chars or shorts, but MUST be unsigned
 	unsigned int indices[] = {
@@ -88,10 +91,10 @@ int main(void)
 		which could result in an error (OpenGL would not be accessible anymore and GLCall would loop on error)
 	*/
 	{
-		// enable blending
+		// Enable color blending
 		GLCall(glEnable(GL_BLEND));
 		/*
-			Tells OpenGL how to blend (combined) colors
+			Tells OpenGL how to blend (combine) colors
 			This function tells OpenGL how to calculate the source (first arg) and destination (second arg) color
 			source is the color we want to render, destination is the color that pixel already has.
 
@@ -121,11 +124,27 @@ int main(void)
 		// 6 = 6 indices
 		IndexBuffer ib{indices, 6};
 
+		/* MVP
+			view matrix - matrix for the view of the camera, position, scale, other.
+			model matrix - matrix for the vertex we are drawing; transformation of the model
+			projection matrix - converting the space we work with (e.g. 0, 640) into (-1, 1)
+		*/
+		// orthographic projection - things do not get smaller with their distance to the camera (no perspective)
+		glm::mat4 projectionMatrix = glm::ortho(0.0f, 640.0f, 0.0f, 480.0f, -1.0f, 1.0f);
+		glm::mat4 viewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-100.0f, 0.0f, 0.0f));		// move camera 100px to left
+		glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(200.0f, 200.0f, 0.0f)); // move objects 200px to right, 200px up
+		/*
+			Multiplication order matters! in OpenGL we work with column major,
+			Direct3D and other are row major, we would multiply in reverse order modelMatrix * viewMatrix * projectionMatrix
+		*/
+		glm::mat4 mvpMatrix = projectionMatrix * viewMatrix * modelMatrix;
+
 		// with shaders in one file
 		// Shader shader{"res/shaders/Basic.glsl"};
 		Shader shader{"res/shaders/Basic.vert", "res/shaders/Basic.frag"};
 		shader.Bind();
 		shader.SetUniform4f("u_Color", 0.8f, 0.3f, 0.8f, 1.0f);
+		shader.SetUniformMat4f("u_MVP", mvpMatrix);
 
 		Texture texture{"res/textures/pizza.png"};
 		texture.Bind();											 // by default binds at texture slot 0

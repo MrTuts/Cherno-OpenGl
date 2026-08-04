@@ -852,6 +852,185 @@ With standard `GL_SRC_ALPHA` blending, transparent objects must be drawn **back 
 
 ---
 
+## GLM — OpenGL Mathematics Library
+
+GLM is a header-only C++ math library designed to mirror GLSL syntax. It provides vector types (`glm::vec2`, `glm::vec3`, `glm::vec4`), matrix types (`glm::mat4`), and transform helpers (`glm::translate`, `glm::ortho`, etc.).
+
+It does **not** call any OpenGL functions. Its role is pure CPU-side math; the results are uploaded to shaders as uniforms.
+
+```cpp
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"  // glm::translate, glm::ortho, etc.
+```
+
+---
+
+## MVP — Model, View, Projection
+
+The MVP transform chain converts vertex positions from **object (local) space** all the way to **clip space** (what OpenGL outputs to the screen). It is applied in the vertex shader:
+
+```glsl
+uniform mat4 u_MVP;
+
+void main() {
+    gl_Position = u_MVP * position;
+}
+```
+
+The three matrices are multiplied on the CPU once per frame and uploaded as a single `mat4` uniform.
+
+### Model Matrix
+
+Transforms vertex positions from **local/object space** into **world space**. Encodes where the object sits in the world — its position, rotation, and scale.
+
+```cpp
+// move the object 200px right, 200px up
+glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(200.0f, 200.0f, 0.0f));
+```
+
+`glm::mat4(1.0f)` is the **identity matrix** — a starting point that applies no transformation.
+
+### View Matrix
+
+Transforms vertex positions from **world space** into **camera (eye) space**. Represents where and how the camera is positioned. A camera "moving right" is mathematically equivalent to the entire world moving left.
+
+```cpp
+// move camera 100px to the left → world shifts 100px to the right
+glm::mat4 viewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-100.0f, 0.0f, 0.0f));
+```
+
+For a full 3D camera, `glm::lookAt(position, target, up)` constructs this matrix from intuitive camera parameters.
+
+### Projection Matrix
+
+Transforms from **camera space** into **clip space** (the `[-1, 1]` NDC cube that OpenGL rasterizes). It defines how your working coordinate system maps to the screen.
+
+**Orthographic projection** (`glm::ortho`) — objects do not shrink with distance. Used for 2D, UI, and technical drawings:
+
+```cpp
+glm::mat4 projectionMatrix = glm::ortho(0.0f, 640.0f, 0.0f, 480.0f, -1.0f, 1.0f);
+//                                       left  right  bottom  top   near   far
+```
+
+This maps x ∈ `[0, 640]` and y ∈ `[0, 480]` to NDC `[-1, 1]`. It lets you specify vertex positions in **pixel coordinates** instead of NDC:
+
+```cpp
+float vertices[] = { 240.0f, 180.0f, ... }; // pixel coords, not NDC
+```
+
+**Perspective projection** (`glm::perspective`) — objects shrink with distance, giving a realistic 3D look.
+
+---
+
+## Matrix Multiplication and Order
+
+Matrix multiplication is **not commutative**: `A * B ≠ B * A`. The rightmost matrix is applied first.
+
+**Example** using 2D homogeneous coordinates (vec3 with `w=1` to allow translation):
+
+```
+Scale by ×2            Translate by (+3, 0)
+S = | 2  0  0 |        T = | 1  0  3 |
+    | 0  2  0 |            | 0  1  0 |
+    | 0  0  1 |            | 0  0  1 |
+
+p = (1, 0, 1)   ← w=1 marks a point (not a direction)
+```
+
+Each output component is the **dot product of one matrix row with the vector column**:
+
+$$
+\begin{pmatrix} a & b & c \\ d & e & f \\ g & h & i \end{pmatrix}
+\begin{pmatrix} x \\ y \\ w \end{pmatrix}
+=
+\begin{pmatrix} ax + by + cw \\ dx + ey + fw \\ gx + hy + iw \end{pmatrix}
+$$
+
+**Scale first, then translate** (column-major notation: `T * S * p`):
+
+```
+        S * p:                              T * (2, 0, 1):
+
+| 2  0  0 |   | 1 |   | 2·1 + 0·0 + 0·1 |   | 2 |       | 1  0  3 |   | 2 |   | 1·2 + 0·0 + 3·1 |   | 5 |
+| 0  2  0 | × | 0 | = | 0·1 + 2·0 + 0·1 | = | 0 |  →    | 0  1  0 | × | 0 | = | 0·2 + 1·0 + 0·1 | = | 0 |
+| 0  0  1 |   | 1 |   | 0·1 + 0·0 + 1·1 |   | 1 |       | 0  0  1 |   | 1 |   | 0·2 + 0·0 + 1·1 |   | 1 |
+```
+
+**Translate first, then scale** (`S * T * p`):
+
+```
+        T * p:                              S * (4, 0, 1):
+
+| 1  0  3 |   | 1 |   | 1·1 + 0·0 + 3·1 |   | 4 |       | 2  0  0 |   | 4 |   | 2·4 + 0·0 + 0·1 |   | 8 |
+| 0  1  0 | × | 0 | = | 0·1 + 1·0 + 0·1 | = | 0 |  →    | 0  2  0 | × | 0 | = | 0·4 + 2·0 + 0·1 | = | 0 |
+| 0  0  1 |   | 1 |   | 0·1 + 0·0 + 1·1 |   | 1 |       | 0  0  1 |   | 1 |   | 0·4 + 0·0 + 1·1 |   | 1 |
+```
+
+Same matrices, different order → different result.
+
+### Column-major (OpenGL / GLM) vs row-major (DirectX)
+
+**Memory layout** is what "column-major" and "row-major" actually refer to — how the 16 floats of a 4×4 matrix are ordered in a flat array.
+
+Given a matrix written on paper as:
+
+```
+M = | a  b  c  d |
+    | e  f  g  h |
+    | i  j  k  l |
+    | m  n  o  p |
+```
+
+| Convention | Memory order | Used by |
+|---|---|---|
+| **Column-major** | `a e i m  b f j n  c g k o  d h l p` | OpenGL, GLM, GLSL, Metal |
+| **Row-major** | `a b c d  e f g h  i j k l  m n o p` | DirectX, HLSL, row vectors in math textbooks |
+
+Column-major stores the **first column** (`a e i m`) first, then the second column, and so on. Row-major stores the **first row** (`a b c d`) first.
+
+This affects how translation is stored. A translation matrix looks like:
+
+```
+| 1  0  0  tx |
+| 0  1  0  ty |
+| 0  0  1  tz |
+| 0  0  0   1 |
+```
+
+- **Column-major (GLM)**: `tx ty tz` are at indices `[12] [13] [14]` — i.e. the 4th column.
+- **Row-major**: `tx ty tz` are at indices `[3] [7] [11]` — i.e. the 4th element of rows 1–3.
+
+**Why this affects multiplication notation.** A column-major matrix multiplied by a **column vector** on the right (`M * v`) matches the convention used in GLSL (`u_MVP * position`). A row-major matrix is typically multiplied by a **row vector** on the left (`v * M`). Same transform, different syntax.
+
+**In code**, the multiplication order in the chain is reversed between the two:
+
+```cpp
+// GLM / OpenGL (column-major): rightmost applied first
+glm::mat4 mvp = projectionMatrix * viewMatrix * modelMatrix;
+
+// HLSL / DirectX (row-major): leftmost applied first
+float4x4 mvp = modelMatrix * viewMatrix * projectionMatrix;
+```
+
+**`GL_FALSE` in `glUniformMatrix4fv`** means "don't transpose before uploading". Since GLM is already column-major and that is what the GLSL shader expects, no transposition is needed. If you were feeding a row-major matrix (e.g. from a DirectX math library), you would pass `GL_TRUE` to transpose it on upload.
+
+---
+
+## Uploading a Matrix Uniform
+
+```cpp
+glUniformMatrix4fv(
+    GetUniformLocation(name),
+    1,          // number of matrices
+    GL_FALSE,   // do NOT transpose — GLM is already column-major
+    &matrix[0][0]  // pointer to first float; glm::value_ptr(matrix) is equivalent
+);
+```
+
+`&matrix[0][0]` and `glm::value_ptr(matrix)` (from `<glm/gtc/type_ptr.hpp>`) both yield a `const float*` to the raw matrix data.
+
+---
+
 ## Rendering Pipeline (simplified)
 
 ```
