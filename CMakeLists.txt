@@ -49,7 +49,7 @@ add_subdirectory(thirdparty/stb_image)			#loading immaged
 # add_subdirectory(thirdparty/enet-1.3.17)		#networking
 # add_subdirectory(thirdparty/raudio)				#audio
 add_subdirectory(thirdparty/glm)				#math
-# add_subdirectory(thirdparty/imgui-docking)		#ui
+add_subdirectory(thirdparty/imgui-docking)		#ui
 # add_subdirectory(thirdparty/gl2d)				#rendering
 
 
@@ -114,7 +114,7 @@ stb_image
 # stb_truetype 
 # gl2d 
 # raudio 
-# imgui
+imgui
 )
 
 

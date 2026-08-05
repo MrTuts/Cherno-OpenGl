@@ -1,5 +1,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <imgui.h>
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_opengl3.h"
 #include <iostream>
 #include <string>
 // #include <gl2d/gl2d.h>
@@ -131,20 +134,13 @@ int main(void)
 		*/
 		// orthographic projection - things do not get smaller with their distance to the camera (no perspective)
 		glm::mat4 projectionMatrix = glm::ortho(0.0f, 640.0f, 0.0f, 480.0f, -1.0f, 1.0f);
-		glm::mat4 viewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-100.0f, 0.0f, 0.0f));		// move camera 100px to left
-		glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(200.0f, 200.0f, 0.0f)); // move objects 200px to right, 200px up
-		/*
-			Multiplication order matters! in OpenGL we work with column major,
-			Direct3D and other are row major, we would multiply in reverse order modelMatrix * viewMatrix * projectionMatrix
-		*/
-		glm::mat4 mvpMatrix = projectionMatrix * viewMatrix * modelMatrix;
+		glm::mat4 viewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-100.0f, 0.0f, 0.0f)); // move camera 100px to left
 
 		// with shaders in one file
 		// Shader shader{"res/shaders/Basic.glsl"};
 		Shader shader{"res/shaders/Basic.vert", "res/shaders/Basic.frag"};
 		shader.Bind();
 		shader.SetUniform4f("u_Color", 0.8f, 0.3f, 0.8f, 1.0f);
-		shader.SetUniformMat4f("u_MVP", mvpMatrix);
 
 		Texture texture{"res/textures/pizza.png"};
 		texture.Bind();											 // by default binds at texture slot 0
@@ -156,16 +152,34 @@ int main(void)
 		vb.Unbind();
 		ib.Unbind();
 
+		glm::vec3 translation(200.0f, 200.0f, 0.0f);
 		float r = 0.0f;
 		float increment = 0.05;
 
 		Renderer renderer;
+		ImGui::CreateContext();
+		ImGuiIO &io = ImGui::GetIO();
+		(void)io;
+
+		ImGui_ImplGlfw_InitForOpenGL(window, true);
+		ImGui_ImplOpenGL3_Init("#version 330");
 		while (!glfwWindowShouldClose(window))
 		{
 			renderer.Clear();
 
+			ImGui_ImplOpenGL3_NewFrame();
+			ImGui_ImplGlfw_NewFrame();
+			ImGui::NewFrame();
+
+			glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), translation); // move objects 200px to right, 200px up
+			/*
+				Multiplication order matters! in OpenGL we work with column major,
+				Direct3D and other are row major, we would multiply in reverse order modelMatrix * viewMatrix * projectionMatrix
+			*/
+			glm::mat4 mvpMatrix = projectionMatrix * viewMatrix * modelMatrix;
 			shader.Bind();
 			shader.SetUniform4f("u_Color", r, 0.3f, 0.8f, 1.0f);
+			shader.SetUniformMat4f("u_MVP", mvpMatrix);
 
 			renderer.Draw(va, ib, shader);
 
@@ -179,6 +193,16 @@ int main(void)
 			}
 			r += increment;
 
+#pragma region imgui
+			{
+				ImGui::SliderFloat3("Translation", &translation.x, 0.0f, 640.0f);
+				ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+			}
+
+			ImGui::Render();
+			ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+#pragma endregion
+
 			/* Swap front and back buffers */
 			glfwSwapBuffers(window);
 
@@ -186,6 +210,10 @@ int main(void)
 			glfwPollEvents();
 		}
 	}
+
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
 
 	// cleanup
 	glfwDestroyWindow(window);
