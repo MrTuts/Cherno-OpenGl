@@ -76,10 +76,10 @@ int main(void)
 		0 ---- 1
 	*/
 	float vertices[] = {
-			240.0f,180.0f, 0.0f, 0.0f, // index 0
-			380.0f,180.0f, 1.0f, 0.0f, // index 1
-			380.0f,300.0f, 1.0f, 1.0f,  // index 2
-			240.0f,300.0f, 0.0f, 1.0f  // index 3
+			-50.0f, -50.0f, 0.0f, 0.0f, // index 0
+			 50.0f, -50.0f, 1.0f, 0.0f, // index 1
+			 50.0f,  50.0f, 1.0f, 1.0f,  // index 2
+			-50.0f,  50.0f, 0.0f, 1.0f  // index 3
 	};
 	// indices can be chars or shorts, but MUST be unsigned
 	unsigned int indices[] = {
@@ -134,7 +134,7 @@ int main(void)
 		*/
 		// orthographic projection - things do not get smaller with their distance to the camera (no perspective)
 		glm::mat4 projectionMatrix = glm::ortho(0.0f, 640.0f, 0.0f, 480.0f, -1.0f, 1.0f);
-		glm::mat4 viewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-100.0f, 0.0f, 0.0f)); // move camera 100px to left
+		glm::mat4 viewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)); // move camera 100px to left
 
 		// with shaders in one file
 		// Shader shader{"res/shaders/Basic.glsl"};
@@ -152,36 +152,59 @@ int main(void)
 		vb.Unbind();
 		ib.Unbind();
 
-		glm::vec3 translation(200.0f, 200.0f, 0.0f);
+		glm::vec3 translationA(200.0f, 200.0f, 0.0f);
+		glm::vec3 translationB(400.0f, 200.0f, 0.0f);
 		float r = 0.0f;
 		float increment = 0.05;
 
 		Renderer renderer;
+
+#pragma region imgui
 		ImGui::CreateContext();
 		ImGuiIO &io = ImGui::GetIO();
 		(void)io;
 
 		ImGui_ImplGlfw_InitForOpenGL(window, true);
 		ImGui_ImplOpenGL3_Init("#version 330");
+#pragma endregion
+
 		while (!glfwWindowShouldClose(window))
 		{
 			renderer.Clear();
 
+#pragma region imgui
 			ImGui_ImplOpenGL3_NewFrame();
 			ImGui_ImplGlfw_NewFrame();
 			ImGui::NewFrame();
+#pragma endregion
 
-			glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), translation); // move objects 200px to right, 200px up
-			/*
+			/* Rendering multiple objects
+				Here we render the same object twice by changing the uniform, we call the Draw function twice. This is good for e.g. rendering
+				3D objects.
+				Another method is batch rendering, where instead we pass all the vertices to GPU and render it in only one Draw function.
+				This batch rendering is better for e.g. rendering many tiles on screen, rendering text
+			*/
+			{
+				// move object based on translation value
+				glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), translationA);
+				/*
 				Multiplication order matters! in OpenGL we work with column major,
 				Direct3D and other are row major, we would multiply in reverse order modelMatrix * viewMatrix * projectionMatrix
-			*/
-			glm::mat4 mvpMatrix = projectionMatrix * viewMatrix * modelMatrix;
-			shader.Bind();
-			shader.SetUniform4f("u_Color", r, 0.3f, 0.8f, 1.0f);
-			shader.SetUniformMat4f("u_MVP", mvpMatrix);
+				*/
+				glm::mat4 mvpMatrix = projectionMatrix * viewMatrix * modelMatrix;
+				shader.Bind();
+				shader.SetUniformMat4f("u_MVP", mvpMatrix);
+				renderer.Draw(va, ib, shader);
+			}
 
-			renderer.Draw(va, ib, shader);
+			/* Rendering same object second time with different model matrix */
+			{
+				glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), translationB);
+				glm::mat4 mvpMatrix = projectionMatrix * viewMatrix * modelMatrix;
+				shader.Bind();
+				shader.SetUniformMat4f("u_MVP", mvpMatrix);
+				renderer.Draw(va, ib, shader);
+			}
 
 			if (r > 1.0f)
 			{
@@ -195,7 +218,8 @@ int main(void)
 
 #pragma region imgui
 			{
-				ImGui::SliderFloat3("Translation", &translation.x, 0.0f, 640.0f);
+				ImGui::SliderFloat3("TranslationA", &translationA.x, 0.0f, 640.0f);
+				ImGui::SliderFloat3("TranslationV", &translationB.x, 0.0f, 640.0f);
 				ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
 			}
 

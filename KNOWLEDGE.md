@@ -1088,3 +1088,51 @@ glEnable(GL_BLEND) + glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
     │
 glDeleteProgram / glfwTerminate
 ```
+
+---
+
+## Rendering Multiple Objects
+
+There are two fundamentally different approaches to drawing more than one object on screen.
+
+### Approach 1 — Multiple draw calls (one per object)
+
+Reuse the same VAO/VBO/IBO and issue one `Draw` call per object, updating the relevant uniforms (typically the model matrix) between calls.
+
+```cpp
+// render loop
+{
+    glm::mat4 mvp = proj * view * glm::translate(glm::mat4(1.0f), translationA);
+    shader.SetUniformMat4f("u_MVP", mvp);
+    renderer.Draw(va, ib, shader);
+}
+{
+    glm::mat4 mvp = proj * view * glm::translate(glm::mat4(1.0f), translationB);
+    shader.SetUniformMat4f("u_MVP", mvp);
+    renderer.Draw(va, ib, shader);
+}
+```
+
+Each `Draw` call is a separate GPU command. The GPU receives N draw calls for N objects.
+
+**When to use**: different 3D meshes, objects with unique shaders or textures, anything where per-object state (transform, material) differs.
+
+### Approach 2 — Batch rendering (single draw call)
+
+Combine all object vertices into one VBO with their world-space positions pre-baked in (or with per-vertex transform data). Issue one `glDrawElements` for the whole batch.
+
+```
+VBO = [quad A vertices | quad B vertices | ...]
+IBO = [indices for A   | indices for B   | ...]
+→ one glDrawElements draws everything
+```
+
+**When to use**: many identical or similar objects (tilemap, particle system, text glyphs) where the cost of individual draw calls would dominate. The CPU overhead of N draw calls is replaced by the cost of updating the combined buffer.
+
+### Trade-offs
+
+| | Multiple draw calls | Batch rendering |
+|---|---|---|
+| CPU overhead | O(N) draw calls | O(1) draw call + buffer update |
+| Flexibility | Easy per-object shader / texture | All objects share one shader / texture |
+| Typical use case | 3D scene objects | Tilemaps, sprites, text |
