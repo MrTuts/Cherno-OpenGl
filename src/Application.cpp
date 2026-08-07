@@ -10,6 +10,7 @@
 #include "Renderer.h"
 #include "scenes/SceneClearColor.h"
 #include "scenes/ScenePizza.h"
+#include "scenes/Scene.h"
 
 static void GLFW_error_callback(int error, const char *description)
 {
@@ -88,7 +89,12 @@ int main(void)
 
 		Renderer renderer;
 
-		scene::SceneClearColor scene;
+		scene::Scene *currentScene = nullptr;
+		scene::SceneMenu *sceneMenu = new scene::SceneMenu(currentScene);
+		currentScene = sceneMenu;
+
+		sceneMenu->RegisterScene<scene::SceneClearColor>("Clear color");
+		sceneMenu->RegisterScene<scene::ScenePizza>("Pizza");
 
 #pragma region imgui
 		ImGui::CreateContext();
@@ -100,15 +106,29 @@ int main(void)
 		{
 			renderer.Clear();
 
-			scene.OnUpdate(0.0f);
-			scene.OnRender(renderer);
+			if (currentScene)
+			{
+				currentScene->OnUpdate(0.0f);
+				currentScene->OnRender(renderer);
+			}
 
 #pragma region imgui
 			ImGui_ImplOpenGL3_NewFrame();
 			ImGui_ImplGlfw_NewFrame();
 			ImGui::NewFrame();
 
-			scene.OnImGuiRender();
+			if (currentScene)
+			{
+				ImGui::Begin("Scene");
+				// this renders the button, the if condition is true if button is clicked
+				if (currentScene != sceneMenu && ImGui::Button("<-"))
+				{
+					delete currentScene;
+					currentScene = sceneMenu;
+				}
+				currentScene->OnImGuiRender();
+				ImGui::End();
+			}
 
 			ImGui::Render();
 			ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -119,6 +139,11 @@ int main(void)
 
 			/* Poll for and process events */
 			glfwPollEvents();
+		}
+		delete currentScene;
+		if (currentScene != sceneMenu)
+		{
+			delete sceneMenu;
 		}
 	}
 

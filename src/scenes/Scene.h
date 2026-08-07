@@ -1,5 +1,8 @@
 #pragma once
 
+#include <iostream>
+#include <vector>
+#include <functional>
 #include "../Renderer.h"
 
 namespace scene
@@ -13,5 +16,26 @@ namespace scene
     virtual void OnUpdate(float deltaTime) {}
     virtual void OnRender(Renderer renderer) {}
     virtual void OnImGuiRender() {}
+  };
+
+  class SceneMenu : public Scene
+  {
+  public:
+    SceneMenu(Scene *&currentScenePtr);
+
+    void OnRender(Renderer renderer) override;
+    void OnImGuiRender() override;
+
+    template <typename T>
+    void RegisterScene(const std::string &name)
+    {
+      std::cout << "Registering scene " << name << std::endl;
+      m_Scenes.push_back(std::make_pair(name, []()
+                                        { return new T(); }));
+    }
+
+  private:
+    Scene *&m_CurrentScene;
+    std::vector<std::pair<std::string, std::function<Scene *()>>> m_Scenes;
   };
 }

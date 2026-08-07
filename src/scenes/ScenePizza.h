@@ -20,7 +20,6 @@ namespace scene
     void OnImGuiRender() override;
 
   private:
-    float m_ClearColor[4];
     VertexArray va;
     VertexBuffer vb;
     Shader shader;
