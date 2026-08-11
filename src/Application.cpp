@@ -10,6 +10,7 @@
 #include "Renderer.h"
 #include "scenes/SceneClearColor.h"
 #include "scenes/ScenePizza.h"
+#include "scenes/SceneTexture2D.h"
 #include "scenes/Scene.h"
 
 static void GLFW_error_callback(int error, const char *description)
@@ -95,6 +96,7 @@ int main(void)
 
 		sceneMenu->RegisterScene<scene::SceneClearColor>("Clear color");
 		sceneMenu->RegisterScene<scene::ScenePizza>("Pizza");
+		sceneMenu->RegisterScene<scene::SceneTexture2D>("2D Texture");
 
 #pragma region imgui
 		ImGui::CreateContext();
@@ -127,6 +129,8 @@ int main(void)
 					currentScene = sceneMenu;
 				}
 				currentScene->OnImGuiRender();
+				float framerate = ImGui::GetIO().Framerate;
+				ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / framerate, framerate);
 				ImGui::End();
 			}
 

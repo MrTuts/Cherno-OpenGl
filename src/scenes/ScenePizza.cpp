@@ -108,9 +108,7 @@ namespace scene
 
   void ScenePizza::OnImGuiRender()
   {
-    ImGui::SliderFloat3("TranslationA", &translationA.x, 0.0f, 640.0f);
-    ImGui::SliderFloat3("TranslationV", &translationB.x, 0.0f, 640.0f);
-    float framerate = ImGui::GetIO().Framerate;
-    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / framerate, framerate);
+    ImGui::SliderFloat3("Translation A", &translationA.x, 0.0f, 640.0f);
+    ImGui::SliderFloat3("Translation B", &translationB.x, 0.0f, 640.0f);
   }
 }
