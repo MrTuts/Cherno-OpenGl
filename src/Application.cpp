@@ -11,7 +11,8 @@
 #include "scenes/SceneClearColor.h"
 #include "scenes/ScenePizza.h"
 #include "scenes/SceneTexture2D.h"
-#include "scenes/SceneBatchRender.h"
+#include "scenes/SceneBatchColor.h"
+#include "scenes/SceneBatchTexture.h"
 #include "scenes/Scene.h"
 
 static void GLFW_error_callback(int error, const char *description)
@@ -98,7 +99,8 @@ int main(void)
 		sceneMenu->RegisterScene<scene::SceneClearColor>("Clear color");
 		sceneMenu->RegisterScene<scene::ScenePizza>("Pizza");
 		sceneMenu->RegisterScene<scene::SceneTexture2D>("2D Texture");
-		sceneMenu->RegisterScene<scene::SceneBatchRender>("Batch render");
+		sceneMenu->RegisterScene<scene::SceneBatchColor>("Batch color render");
+		sceneMenu->RegisterScene<scene::SceneBatchTexture>("Batch texture render");
 
 #pragma region imgui
 		ImGui::CreateContext();

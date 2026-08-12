@@ -1136,3 +1136,77 @@ IBO = [indices for A   | indices for B   | ...]
 | CPU overhead | O(N) draw calls | O(1) draw call + buffer update |
 | Flexibility | Easy per-object shader / texture | All objects share one shader / texture |
 | Typical use case | 3D scene objects | Tilemaps, sprites, text |
+
+---
+
+## Batch Rendering Variants
+
+### Variant A — Per-vertex color (no textures)
+
+Each vertex carries RGBA data directly in the VBO. The fragment shader outputs the interpolated color; no texture sampling is involved.
+
+**Vertex layout** (9 floats if combined with texture variant, 6 floats for color-only):
+
+```
+[  x  ][  y  ][ r ][ g ][ b ][ a ]
+ pos(2)         color(4)
+```
+
+**Vertex shader** receives `layout(location = 1) in vec4 a_Color` and passes it through as `out vec4 v_Color`. Fragment shader simply writes `o_Color = v_Color`.
+
+This is the simplest batch — one draw call, no texture binds, shader is trivial.
+
+### Variant B — Multiple textures via texture slots
+
+When each quad in the batch needs a different texture, the texture unit index is stored as a per-vertex float attribute (`a_TexIndex`). Each unique texture is bound to a different slot before the draw call.
+
+**Vertex layout** (per vertex):
+
+```
+[  x  ][  y  ][ r ][ g ][ b ][ a ][  u  ][  v  ][ texIdx ]
+ pos(2)         color(4)              uv(2)        index(1)
+```
+
+**Fragment shader** samples from a `sampler2D` array indexed by the vertex value:
+
+```glsl
+uniform sampler2D u_Textures[2];
+
+void main() {
+    int index = int(v_TexIndex);
+    o_Color = texture(u_Textures[index], v_TexCoord);
+}
+```
+
+**C++ setup** — bind each texture to its slot, then upload the slot indices as an int array uniform:
+
+```cpp
+m_TexturePizza->Bind(0);       // GL_TEXTURE0
+m_TextureBaguette->Bind(1);    // GL_TEXTURE1
+int samplers[2] = {0, 1};
+shader.SetUniform1iv("u_Textures", 2, samplers);
+```
+
+`glUniform1iv` uploads an `int[]` uniform — the `iv` suffix means "integer vector (array)":
+
+```cpp
+void Shader::SetUniform1iv(const std::string& name, unsigned int size, int* value)
+{
+    GLCall(glUniform1iv(GetUniformLocation(name), size, value));
+}
+```
+
+**Limitation**: the number of available texture slots is hardware-dependent and typically small (OpenGL guarantees at least 8 combined image units; most desktop GPUs expose 16–32). A batch can only contain as many unique textures as there are available slots.
+
+### Variant C — Texture atlas (alternative to multiple slots)
+
+A texture atlas packs multiple images into a single texture file. Each quad's UV coordinates are set to the sub-region of the atlas that contains its image. Only one texture is bound, so the slot limitation does not apply.
+
+**Trade-offs vs. texture slots**:
+
+| | Texture slots | Texture atlas |
+|---|---|---|
+| Number of unique textures per batch | Limited by GPU slot count | Unlimited (atlas can be arbitrarily large) |
+| Setup complexity | Simple — bind textures individually | Requires pre-packing atlas and computing sub-UVs |
+| Runtime flexibility | Can swap textures freely | Adding new textures requires rebuilding the atlas |
+| Typical use case | Small fixed sets (2–8 textures) | Sprite sheets, tilemaps, UI icon sets |

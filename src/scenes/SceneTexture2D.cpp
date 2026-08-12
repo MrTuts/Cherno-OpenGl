@@ -11,8 +11,7 @@
 namespace scene
 {
 
-  SceneTexture2D::SceneTexture2D() : m_TranslationA(glm::vec3(200.0f, 200.0f, 0.0f)),
-                                     m_TranslationB(glm::vec3(400.0f, 200.0f, 0.0f)),
+  SceneTexture2D::SceneTexture2D() : m_Translation(glm::vec3(320.0f, 240.0f, 0.0f)),
                                      /* MVP
                                       view matrix - matrix for the view of the camera, position, scale, other.
                                       model matrix - matrix for the vertex we are drawing; transformation of the model
@@ -32,10 +31,10 @@ namespace scene
       0 ---- 1
     */
     static const float vertices[] = {
-        -50.0f, -50.0f, 0.0f, 0.0f, // index 0
-        50.0f, -50.0f, 1.0f, 0.0f, // index 1
-        50.0f,  50.0f, 1.0f, 1.0f,  // index 2
-        -50.0f,  50.0f, 0.0f, 1.0f  // index 3
+        -320.0f, -240.0f, 0.0f, 0.0f, // index 0
+        320.0f, -240.0f, 1.0f, 0.0f, // index 1
+        320.0f,  240.0f, 1.0f, 1.0f,  // index 2
+        -320.0f,  240.0f, 0.0f, 1.0f  // index 3
     };
     // indices can be chars or shorts, but MUST be unsigned
     static const unsigned int indices[] = {
@@ -91,32 +90,20 @@ namespace scene
         Another method is batch rendering, where instead we pass all the vertices to GPU and render it in only one Draw function.
         This batch rendering is better for e.g. rendering many tiles on screen, rendering text
       */
-    {
-      // move object based on translation value
-      glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), m_TranslationA);
-      /*
-      Multiplication order matters! in OpenGL we work with column major,
-      Direct3D and other are row major, we would multiply in reverse order modelMatrix * m_ViewMatrix * m_ProjectionMatrix
-      */
-      glm::mat4 mvpMatrix = m_ProjectionMatrix * m_ViewMatrix * modelMatrix;
-      m_Shader->Bind();
-      m_Shader->SetUniformMat4f("u_MVP", mvpMatrix);
-      renderer.Draw(*m_VAO, *m_IBO, *m_Shader);
-    }
-
-    /* Rendering same object second time with different model matrix */
-    {
-      glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), m_TranslationB);
-      glm::mat4 mvpMatrix = m_ProjectionMatrix * m_ViewMatrix * modelMatrix;
-      m_Shader->Bind();
-      m_Shader->SetUniformMat4f("u_MVP", mvpMatrix);
-      renderer.Draw(*m_VAO, *m_IBO, *m_Shader);
-    }
+    // move object based on translation value
+    glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), m_Translation);
+    /*
+    Multiplication order matters! in OpenGL we work with column major,
+    Direct3D and other are row major, we would multiply in reverse order modelMatrix * m_ViewMatrix * m_ProjectionMatrix
+    */
+    glm::mat4 mvpMatrix = m_ProjectionMatrix * m_ViewMatrix * modelMatrix;
+    m_Shader->Bind();
+    m_Shader->SetUniformMat4f("u_MVP", mvpMatrix);
+    renderer.Draw(*m_VAO, *m_IBO, *m_Shader);
   }
 
   void SceneTexture2D::OnImGuiRender()
   {
-    ImGui::SliderFloat3("Translation A", &m_TranslationA.x, 0.0f, 640.0f);
-    ImGui::SliderFloat3("Translation B", &m_TranslationB.x, 0.0f, 640.0f);
+    ImGui::SliderFloat3("Translation A", &m_Translation.x, 0.0f, 640.0f);
   }
 }

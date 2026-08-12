@@ -10,11 +10,11 @@
 
 namespace scene
 {
-  class SceneBatchRender : public Scene
+  class SceneBatchColor : public Scene
   {
   public:
-    SceneBatchRender();
-    ~SceneBatchRender();
+    SceneBatchColor();
+    ~SceneBatchColor();
 
     void OnUpdate(float deltaTime) override;
     void OnRender(Renderer renderer) override;
@@ -25,7 +25,6 @@ namespace scene
     std::unique_ptr<VertexBuffer> m_VBO;
     std::unique_ptr<Shader> m_Shader;
     std::unique_ptr<IndexBuffer> m_IBO;
-    std::unique_ptr<Texture> m_Texture;
     glm::mat4 m_ProjectionMatrix;
     glm::mat4 m_ViewMatrix;
     glm::vec3 m_Translation;
