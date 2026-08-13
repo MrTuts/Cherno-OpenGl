@@ -1198,6 +1198,56 @@ void Shader::SetUniform1iv(const std::string& name, unsigned int size, int* valu
 
 **Limitation**: the number of available texture slots is hardware-dependent and typically small (OpenGL guarantees at least 8 combined image units; most desktop GPUs expose 16–32). A batch can only contain as many unique textures as there are available slots.
 
+### Variant D — Dynamic batch (CPU updates vertex data every frame)
+
+In all previous variants the vertex data is uploaded once with `GL_STATIC_DRAW` and never changed. A **dynamic batch** allocates the VBO with `GL_DYNAMIC_DRAW` and `nullptr` data, then overwrites part of it each frame with `glBufferSubData`.
+
+**Allocation — reserve GPU memory without uploading data:**
+
+```cpp
+glBindBuffer(GL_ARRAY_BUFFER, m_QuadVB);
+glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * 1000, nullptr, GL_DYNAMIC_DRAW);
+//                                                    ^^^^^^^ no data yet
+```
+
+Passing `nullptr` tells the driver to allocate the memory but leave it uninitialised. `GL_DYNAMIC_DRAW` is a hint that the buffer will be updated frequently, allowing the driver to place it in more write-friendly memory.
+
+**Per-frame update — write new vertex data into the existing buffer:**
+
+```cpp
+// build quads on the CPU
+auto q0 = CreateQuad(x, y, texID);
+auto q1 = CreateQuad(200, -50, 1);
+Vertex vertices[8];
+memcpy(vertices,              q0.data(), q0.size() * sizeof(Vertex));
+memcpy(vertices + q0.size(),  q1.data(), q1.size() * sizeof(Vertex));
+
+// push to GPU — no reallocation, just overwrites bytes [0, sizeof(vertices))
+glBindBuffer(GL_ARRAY_BUFFER, m_QuadVB);
+glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+```
+
+`glBufferSubData(target, offset, size, data)` copies `size` bytes from `data` into the bound buffer starting at `offset`. The buffer must already have been allocated with at least `offset + size` bytes via `glBufferData`.
+
+The IBO is still uploaded once as `GL_STATIC_DRAW` — index patterns don't change, only vertex positions do.
+
+**`offsetof` for struct-based vertex layouts:**
+
+When vertices are defined as structs, `offsetof` gives the byte offset of each member without manual arithmetic:
+
+```cpp
+struct Vertex { Vec2 Position; Vec4 Color; Vec2 TexCoords; float TexID; };
+
+glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)offsetof(Vertex, Position));
+glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)offsetof(Vertex, Color));
+glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)offsetof(Vertex, TexCoords));
+glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)offsetof(Vertex, TexID));
+```
+
+**When to use dynamic batching**: object positions, sizes, or colors change every frame (e.g. particles, draggable sprites). The CPU assembles world-space geometry and uploads the changed region; the GPU issues a single draw call for the whole batch.
+
+---
+
 ### Variant C — Texture atlas (alternative to multiple slots)
 
 A texture atlas packs multiple images into a single texture file. Each quad's UV coordinates are set to the sub-region of the atlas that contains its image. Only one texture is bound, so the slot limitation does not apply.

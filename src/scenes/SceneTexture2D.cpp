@@ -30,14 +30,14 @@ namespace scene
       |    |
       0 ---- 1
     */
-    static const float vertices[] = {
+    const float vertices[] = {
         -320.0f, -240.0f, 0.0f, 0.0f, // index 0
         320.0f, -240.0f, 1.0f, 0.0f, // index 1
         320.0f,  240.0f, 1.0f, 1.0f,  // index 2
         -320.0f,  240.0f, 0.0f, 1.0f  // index 3
     };
     // indices can be chars or shorts, but MUST be unsigned
-    static const unsigned int indices[] = {
+    const unsigned int indices[] = {
       0,1,2, // bottom right triangle
       2,3,0  // top left triangle
     };

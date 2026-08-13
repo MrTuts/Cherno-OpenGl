@@ -10,14 +10,14 @@
       |    |
       0 ---- 1
 */
-static const float vertices[] = {
+const float vertices[] = {
     -50.0f, -50.0f, 0.0f, 0.0f, // index 0
     50.0f, -50.0f, 1.0f, 0.0f, // index 1
     50.0f,  50.0f, 1.0f, 1.0f,  // index 2
     -50.0f,  50.0f, 0.0f, 1.0f  // index 3
 };
 // indices can be chars or shorts, but MUST be unsigned
-static const unsigned int indices[] = {
+const unsigned int indices[] = {
   0,1,2, // bottom right triangle
   2,3,0  // top left triangle
 };

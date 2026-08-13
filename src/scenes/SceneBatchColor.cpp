@@ -17,7 +17,7 @@ namespace scene
 
   {
     // clang-format off
-    static const float vertices[] = {
+    const float vertices[] = {
         -50.0f, -50.0f, 0.18f, 0.06f, 0.96f, 1.0f, // index 0
         50.0f, -50.0f, 0.18f, 0.06f, 0.96f, 1.0f, // index 1
         50.0f,  50.0f, 0.18f, 0.06f, 0.96f, 1.0f,  // index 2
@@ -29,7 +29,7 @@ namespace scene
         150.0f,  50.0f, 1.0f, 0.93f, 0.24f, 1.0f, // index 7
     };
     // indices can be chars or shorts, but MUST be unsigned
-    static const unsigned int indices[] = {
+    const unsigned int indices[] = {
       0,1,2, // bottom right triangle
       2,3,0,  // top left triangle
       
@@ -65,19 +65,17 @@ namespace scene
     GLCall(glClearColor(0.0f, 0.0f, 0.0f, 1.0f));
     GLCall(glClear(GL_COLOR_BUFFER_BIT));
 
-    {
-      // move object based on translation value
-      glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), m_Translation);
+    // move object based on translation value
+    glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), m_Translation);
 
-      /*
-      Multiplication order matters! in OpenGL we work with column major,
-      Direct3D and other are row major, we would multiply in reverse order modelMatrix * m_ViewMatrix * m_ProjectionMatrix
-      */
-      glm::mat4 mvpMatrix = m_ProjectionMatrix * m_ViewMatrix * modelMatrix;
-      m_Shader->Bind();
-      m_Shader->SetUniformMat4f("u_MVP", mvpMatrix);
-      renderer.Draw(*m_VAO, *m_IBO, *m_Shader);
-    }
+    /*
+    Multiplication order matters! in OpenGL we work with column major,
+    Direct3D and other are row major, we would multiply in reverse order modelMatrix * m_ViewMatrix * m_ProjectionMatrix
+    */
+    glm::mat4 mvpMatrix = m_ProjectionMatrix * m_ViewMatrix * modelMatrix;
+    m_Shader->Bind();
+    m_Shader->SetUniformMat4f("u_MVP", mvpMatrix);
+    renderer.Draw(*m_VAO, *m_IBO, *m_Shader);
   }
 
   void SceneBatchColor::OnImGuiRender()

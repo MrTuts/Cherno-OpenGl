@@ -13,6 +13,7 @@
 #include "scenes/SceneTexture2D.h"
 #include "scenes/SceneBatchColor.h"
 #include "scenes/SceneBatchTexture.h"
+#include "scenes/SceneBatchDynamic.h"
 #include "scenes/Scene.h"
 
 static void GLFW_error_callback(int error, const char *description)
@@ -101,6 +102,7 @@ int main(void)
 		sceneMenu->RegisterScene<scene::SceneTexture2D>("2D Texture");
 		sceneMenu->RegisterScene<scene::SceneBatchColor>("Batch color render");
 		sceneMenu->RegisterScene<scene::SceneBatchTexture>("Batch texture render");
+		sceneMenu->RegisterScene<scene::SceneBatchDynamic>("Batch dynamic render");
 
 #pragma region imgui
 		ImGui::CreateContext();
