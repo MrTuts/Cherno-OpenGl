@@ -1,6 +1,7 @@
 #include "SceneMenu.h"
 #include "Renderer.h"
 
+#include <algorithm>
 #include <imgui.h>
 
 namespace scene
@@ -17,11 +18,28 @@ namespace scene
 
   void SceneMenu::OnImGuiRender()
   {
+    if (m_Scenes.empty())
+    {
+      return;
+    }
+    std::sort(
+        m_Scenes.begin(),
+        m_Scenes.end(),
+        [](const SceneMenuScene &a, const SceneMenuScene &b)
+        { return a.parent < b.parent; });
+    std::string currentParent;
+
     for (auto &scene : m_Scenes)
     {
-      if (ImGui::Button(scene.first.c_str()))
+      if (currentParent.compare(scene.parent) != 0)
       {
-        m_CurrentScene = scene.second();
+        currentParent = scene.parent;
+        ImGui::TextUnformatted(currentParent.c_str());
+      }
+      std::string name = scene.parent + ": " + scene.name;
+      if (ImGui::Button(name.c_str()))
+      {
+        m_CurrentScene = scene.create();
       }
     }
   }

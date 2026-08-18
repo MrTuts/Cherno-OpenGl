@@ -14,6 +14,7 @@
 #include "cherno/scenes/SceneBatchColor.h"
 #include "cherno/scenes/SceneBatchTexture.h"
 #include "cherno/scenes/SceneBatchDynamic.h"
+#include "jamieKing/scenes/SceneBasicTriangle.h"
 #include "Scene.h"
 #include "SceneMenu.h"
 
@@ -39,7 +40,7 @@ int main(void)
 #endif
 
 	GLFWwindow *window;
-	window = glfwCreateWindow(640, 480, "Cherno series", NULL, NULL);
+	window = glfwCreateWindow(640, 480, "OpenGL", NULL, NULL);
 	if (!window)
 	{
 		glfwTerminate();
@@ -96,12 +97,13 @@ int main(void)
 		scene::SceneMenu *sceneMenu = new scene::SceneMenu(currentScene);
 		currentScene = sceneMenu;
 
-		sceneMenu->RegisterScene<cherno::scene::SceneClearColor>("Clear color");
-		sceneMenu->RegisterScene<cherno::scene::ScenePizza>("Pizza");
-		sceneMenu->RegisterScene<cherno::scene::SceneTexture2D>("2D Texture");
-		sceneMenu->RegisterScene<cherno::scene::SceneBatchColor>("Batch color render");
-		sceneMenu->RegisterScene<cherno::scene::SceneBatchTexture>("Batch texture render");
-		sceneMenu->RegisterScene<cherno::scene::SceneBatchDynamic>("Batch dynamic render");
+		sceneMenu->RegisterChernoScene<cherno::scene::SceneClearColor>("Clear color");
+		sceneMenu->RegisterChernoScene<cherno::scene::ScenePizza>("Pizza");
+		sceneMenu->RegisterChernoScene<cherno::scene::SceneTexture2D>("2D Texture");
+		sceneMenu->RegisterChernoScene<cherno::scene::SceneBatchColor>("Batch color render");
+		sceneMenu->RegisterChernoScene<cherno::scene::SceneBatchTexture>("Batch texture render");
+		sceneMenu->RegisterChernoScene<cherno::scene::SceneBatchDynamic>("Batch dynamic render");
+		sceneMenu->RegisterJKingScene<jking::scene::BasicTriangleScene>("Basic triangle");
 
 #pragma region imgui
 		ImGui::CreateContext();

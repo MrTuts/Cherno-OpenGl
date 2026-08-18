@@ -7,6 +7,13 @@
 
 namespace scene
 {
+  struct SceneMenuScene
+  {
+    std::string name;
+    std::string parent;
+    std::function<Scene *()> create;
+  };
+
   class SceneMenu : public Scene
   {
   public:
@@ -16,15 +23,29 @@ namespace scene
     void OnImGuiRender() override;
 
     template <typename T>
-    void RegisterScene(const std::string &name)
+    void RegisterScene(const std::string &name, const std::string &parent)
     {
       std::cout << "Registering scene " << name << std::endl;
-      m_Scenes.push_back(std::make_pair(name, []()
-                                        { return new T(); }));
+      m_Scenes.push_back({name, parent, []()
+                          { return new T(); }});
+      // m_Scenes.push_back(std::make_pair(name, []()
+      //                                   { return new T(); }));
+    }
+
+    template <typename T>
+    void RegisterChernoScene(const std::string &name)
+    {
+      RegisterScene<T>(name, "Cherno");
+    }
+
+    template <typename T>
+    void RegisterJKingScene(const std::string &name)
+    {
+      RegisterScene<T>(name, "JKing");
     }
 
   private:
     Scene *&m_CurrentScene;
-    std::vector<std::pair<std::string, std::function<Scene *()>>> m_Scenes;
+    std::vector<SceneMenuScene> m_Scenes;
   };
 }
