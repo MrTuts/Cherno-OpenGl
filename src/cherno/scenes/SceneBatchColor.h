@@ -8,26 +8,23 @@
 #include "../VertexBufferLayout.h"
 #include "../Texture.h"
 
-namespace scene
+namespace cherno::scene
 {
-  class SceneBatchDynamic : public Scene
+  class SceneBatchColor : public ::scene::Scene
   {
   public:
-    SceneBatchDynamic();
-    ~SceneBatchDynamic();
+    SceneBatchColor();
+    ~SceneBatchColor();
 
     void OnUpdate(float deltaTime) override;
-    void OnRender(Renderer renderer) override;
+    void OnRender() override;
     void OnImGuiRender() override;
 
   private:
-    unsigned int m_QuadVA;
-    unsigned int m_QuadVB;
-    unsigned int m_QuadIB;
-    float m_QuadPos[2] = {-1, -1};
+    std::unique_ptr<VertexArray> m_VAO;
+    std::unique_ptr<VertexBuffer> m_VBO;
     std::unique_ptr<Shader> m_Shader;
-    std::unique_ptr<Texture> m_TexturePizza;
-    std::unique_ptr<Texture> m_TextureBaguette;
+    std::unique_ptr<IndexBuffer> m_IBO;
     glm::mat4 m_ProjectionMatrix;
     glm::mat4 m_ViewMatrix;
     glm::vec3 m_Translation;

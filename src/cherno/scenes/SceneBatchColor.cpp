@@ -8,7 +8,7 @@
 #include "../VertexBufferLayout.h"
 #include "../Texture.h"
 
-namespace scene
+namespace cherno::scene
 {
 
   SceneBatchColor::SceneBatchColor() : m_Translation(glm::vec3(200.0f, 200.0f, 0.0f)),
@@ -60,7 +60,7 @@ namespace scene
   {
   }
 
-  void SceneBatchColor::OnRender(Renderer renderer)
+  void SceneBatchColor::OnRender()
   {
     GLCall(glClearColor(0.0f, 0.0f, 0.0f, 1.0f));
     GLCall(glClear(GL_COLOR_BUFFER_BIT));
@@ -75,7 +75,7 @@ namespace scene
     glm::mat4 mvpMatrix = m_ProjectionMatrix * m_ViewMatrix * modelMatrix;
     m_Shader->Bind();
     m_Shader->SetUniformMat4f("u_MVP", mvpMatrix);
-    renderer.Draw(*m_VAO, *m_IBO, *m_Shader);
+    cherno::Draw(*m_VAO, *m_IBO, *m_Shader);
   }
 
   void SceneBatchColor::OnImGuiRender()

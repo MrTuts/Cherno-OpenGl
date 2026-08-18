@@ -7,16 +7,16 @@
 #include "../Texture.h"
 #include "glm/glm.hpp"
 
-namespace scene
+namespace cherno::scene
 {
-  class ScenePizza : public Scene
+  class ScenePizza : public ::scene::Scene
   {
   public:
     ScenePizza();
     ~ScenePizza();
 
     void OnUpdate(float deltaTime) override;
-    void OnRender(Renderer renderer) override;
+    void OnRender() override;
     void OnImGuiRender() override;
 
   private:

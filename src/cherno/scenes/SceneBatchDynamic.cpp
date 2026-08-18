@@ -60,7 +60,7 @@ static std::array<Vertex, 4> CreateQuad(float x, float y, float texID)
   return {v0, v1, v2, v3};
 }
 
-namespace scene
+namespace cherno::scene
 {
 
   /*
@@ -144,7 +144,7 @@ namespace scene
   {
   }
 
-  void SceneBatchDynamic::OnRender(Renderer renderer)
+  void SceneBatchDynamic::OnRender()
   {
     GLCall(glClearColor(0.0f, 0.0f, 0.0f, 1.0f));
     GLCall(glClear(GL_COLOR_BUFFER_BIT));

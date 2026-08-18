@@ -456,7 +456,7 @@ Shaders are written in **GLSL** (OpenGL Shading Language), compiled at runtime b
 Runs once per vertex. Receives vertex attributes as `in` variables. Must write `gl_Position` (clip-space position).
 
 ```glsl
-#version 330 core
+#version 410 core
 
 layout(location = 0) in vec4 position; // attribute index 0
 
@@ -473,7 +473,7 @@ void main()
 Runs once per pixel (fragment) that lies inside a rasterized primitive. Writes to one or more `out` color outputs.
 
 ```glsl
-#version 330 core
+#version 410 core
 
 layout(location = 0) out vec4 color; // output 0 → default framebuffer color
 

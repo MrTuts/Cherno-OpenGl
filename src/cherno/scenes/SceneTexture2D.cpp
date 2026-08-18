@@ -8,7 +8,7 @@
 #include "../VertexBufferLayout.h"
 #include "../Texture.h"
 
-namespace scene
+namespace cherno::scene
 {
 
   SceneTexture2D::SceneTexture2D() : m_Translation(glm::vec3(320.0f, 240.0f, 0.0f)),
@@ -78,7 +78,7 @@ namespace scene
   {
   }
 
-  void SceneTexture2D::OnRender(Renderer renderer)
+  void SceneTexture2D::OnRender()
   {
     GLCall(glClearColor(0.0f, 0.0f, 0.0f, 1.0f));
     GLCall(glClear(GL_COLOR_BUFFER_BIT));
@@ -99,7 +99,7 @@ namespace scene
     glm::mat4 mvpMatrix = m_ProjectionMatrix * m_ViewMatrix * modelMatrix;
     m_Shader->Bind();
     m_Shader->SetUniformMat4f("u_MVP", mvpMatrix);
-    renderer.Draw(*m_VAO, *m_IBO, *m_Shader);
+    cherno::Draw(*m_VAO, *m_IBO, *m_Shader);
   }
 
   void SceneTexture2D::OnImGuiRender()

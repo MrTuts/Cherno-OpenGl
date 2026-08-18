@@ -1,5 +1,5 @@
 #shader vertex
-#version 330 core
+#version 410 core
 
 layout(location = 0) in vec4 position;  // location 0 corelates with 0 at glVertexAttribPointer(0,...)
 layout(location = 1) in vec2 texCoord;  // location 1 corelates with 1 at glVertexAttribPointer(1,...)
@@ -16,7 +16,7 @@ void main() {
 }
 
 #shader fragment
-#version 330 core
+#version 410 core
 
 layout(location = 0) out vec4 color;
 

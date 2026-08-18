@@ -8,16 +8,16 @@
 #include "../VertexBufferLayout.h"
 #include "../Texture.h"
 
-namespace scene
+namespace cherno::scene
 {
-  class SceneBatchTexture : public Scene
+  class SceneBatchTexture : public ::scene::Scene
   {
   public:
     SceneBatchTexture();
     ~SceneBatchTexture();
 
     void OnUpdate(float deltaTime) override;
-    void OnRender(Renderer renderer) override;
+    void OnRender() override;
     void OnImGuiRender() override;
 
   private:

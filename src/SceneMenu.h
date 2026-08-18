@@ -3,27 +3,16 @@
 #include <iostream>
 #include <vector>
 #include <functional>
-#include "../Renderer.h"
+#include "Scene.h"
 
 namespace scene
 {
-  class Scene
-  {
-  public:
-    Scene() {};
-    virtual ~Scene() {}
-
-    virtual void OnUpdate(float deltaTime) {}
-    virtual void OnRender(Renderer renderer) {}
-    virtual void OnImGuiRender() {}
-  };
-
   class SceneMenu : public Scene
   {
   public:
     SceneMenu(Scene *&currentScenePtr);
 
-    void OnRender(Renderer renderer) override;
+    void OnRender() override;
     void OnImGuiRender() override;
 
     template <typename T>

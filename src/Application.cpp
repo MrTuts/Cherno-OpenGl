@@ -8,13 +8,14 @@
 // #include <gl2d/gl2d.h>
 #include <openglErrorReporting.h>
 #include "Renderer.h"
-#include "scenes/SceneClearColor.h"
-#include "scenes/ScenePizza.h"
-#include "scenes/SceneTexture2D.h"
-#include "scenes/SceneBatchColor.h"
-#include "scenes/SceneBatchTexture.h"
-#include "scenes/SceneBatchDynamic.h"
-#include "scenes/Scene.h"
+#include "cherno/scenes/SceneClearColor.h"
+#include "cherno/scenes/ScenePizza.h"
+#include "cherno/scenes/SceneTexture2D.h"
+#include "cherno/scenes/SceneBatchColor.h"
+#include "cherno/scenes/SceneBatchTexture.h"
+#include "cherno/scenes/SceneBatchDynamic.h"
+#include "Scene.h"
+#include "SceneMenu.h"
 
 static void GLFW_error_callback(int error, const char *description)
 {
@@ -30,8 +31,8 @@ int main(void)
 	if (!glfwInit())
 		return -1;
 
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 #ifdef __APPLE__
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
@@ -91,33 +92,31 @@ int main(void)
 		float r = 0.0f;
 		float increment = 0.05;
 
-		Renderer renderer;
-
 		scene::Scene *currentScene = nullptr;
 		scene::SceneMenu *sceneMenu = new scene::SceneMenu(currentScene);
 		currentScene = sceneMenu;
 
-		sceneMenu->RegisterScene<scene::SceneClearColor>("Clear color");
-		sceneMenu->RegisterScene<scene::ScenePizza>("Pizza");
-		sceneMenu->RegisterScene<scene::SceneTexture2D>("2D Texture");
-		sceneMenu->RegisterScene<scene::SceneBatchColor>("Batch color render");
-		sceneMenu->RegisterScene<scene::SceneBatchTexture>("Batch texture render");
-		sceneMenu->RegisterScene<scene::SceneBatchDynamic>("Batch dynamic render");
+		sceneMenu->RegisterScene<cherno::scene::SceneClearColor>("Clear color");
+		sceneMenu->RegisterScene<cherno::scene::ScenePizza>("Pizza");
+		sceneMenu->RegisterScene<cherno::scene::SceneTexture2D>("2D Texture");
+		sceneMenu->RegisterScene<cherno::scene::SceneBatchColor>("Batch color render");
+		sceneMenu->RegisterScene<cherno::scene::SceneBatchTexture>("Batch texture render");
+		sceneMenu->RegisterScene<cherno::scene::SceneBatchDynamic>("Batch dynamic render");
 
 #pragma region imgui
 		ImGui::CreateContext();
 		ImGui_ImplGlfw_InitForOpenGL(window, true);
-		ImGui_ImplOpenGL3_Init("#version 330");
+		ImGui_ImplOpenGL3_Init("#version 410");
 #pragma endregion
 
 		while (!glfwWindowShouldClose(window))
 		{
-			renderer.Clear();
+			GLCall(glClear(GL_COLOR_BUFFER_BIT));
 
 			if (currentScene)
 			{
 				currentScene->OnUpdate(0.0f);
-				currentScene->OnRender(renderer);
+				currentScene->OnRender();
 			}
 
 #pragma region imgui

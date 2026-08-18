@@ -1,4 +1,5 @@
-#include "Scene.h"
+#include "SceneMenu.h"
+#include "Renderer.h"
 
 #include <imgui.h>
 
@@ -9,7 +10,7 @@ namespace scene
   {
   }
 
-  void SceneMenu::OnRender(Renderer renderer)
+  void SceneMenu::OnRender()
   {
     GLCall(glClearColor(0.0f, 0.0f, 0.0f, 1.0f));
   }

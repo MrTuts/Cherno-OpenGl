@@ -2,16 +2,16 @@
 
 #include "Scene.h"
 
-namespace scene
+namespace cherno::scene
 {
-  class SceneClearColor : public Scene
+  class SceneClearColor : public ::scene::Scene
   {
   public:
     SceneClearColor();
     ~SceneClearColor();
 
     void OnUpdate(float deltaTime) override;
-    void OnRender(Renderer renderer) override;
+    void OnRender() override;
     void OnImGuiRender() override;
 
   private:

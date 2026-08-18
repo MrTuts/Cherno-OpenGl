@@ -23,7 +23,7 @@ const unsigned int indices[] = {
 };
 // clang-format on
 
-namespace scene
+namespace cherno::scene
 {
 
   ScenePizza::ScenePizza() : va(VertexArray()),
@@ -74,7 +74,7 @@ namespace scene
   {
   }
 
-  void ScenePizza::OnRender(Renderer renderer)
+  void ScenePizza::OnRender()
   {
     texture.Bind();
     /* Rendering multiple objects
@@ -93,7 +93,7 @@ namespace scene
       glm::mat4 mvpMatrix = projectionMatrix * viewMatrix * modelMatrix;
       shader.Bind();
       shader.SetUniformMat4f("u_MVP", mvpMatrix);
-      renderer.Draw(va, ib, shader);
+      cherno::Draw(va, ib, shader);
     }
 
     /* Rendering same object second time with different model matrix */
@@ -102,7 +102,7 @@ namespace scene
       glm::mat4 mvpMatrix = projectionMatrix * viewMatrix * modelMatrix;
       shader.Bind();
       shader.SetUniformMat4f("u_MVP", mvpMatrix);
-      renderer.Draw(va, ib, shader);
+      cherno::Draw(va, ib, shader);
     }
   }
 
