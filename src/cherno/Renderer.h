@@ -3,7 +3,7 @@
 #include <Renderer.h>
 #include "./VertexArray.h"
 #include "./IndexBuffer.h"
-#include "./Shader.h"
+#include "../common/Shader.h"
 
 namespace cherno
 {
