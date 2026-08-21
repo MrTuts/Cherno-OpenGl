@@ -1,4 +1,6 @@
+#pragma once
 #include "SceneBasicTriangle.h"
+#include <GLFW/glfw3.h>
 
 #include "Renderer.h"
 #include "../../common/Shader.h"
@@ -42,6 +44,12 @@ namespace jking::scene
 
     m_Shader = std::make_unique<Shader>("res/shaders/BasicTriangle.vert", "res/shaders/BasicTriangle.frag");
     m_Shader->Bind();
+    m_Shader->SetUniform1d("u_elapsedTime", glfwGetTime());
+  }
+
+  void BasicTriangleScene::OnUpdate(float deltaTime)
+  {
+    m_Shader->SetUniform1d("u_elapsedTime", glfwGetTime());
   }
 
   void BasicTriangleScene::OnRender()

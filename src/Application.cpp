@@ -105,6 +105,10 @@ int main(void)
 		sceneMenu->RegisterChernoScene<cherno::scene::SceneBatchDynamic>("Batch dynamic render");
 		sceneMenu->RegisterJKingScene<jking::scene::BasicTriangleScene>("Basic triangle");
 
+		double currentFrameTime = glfwGetTime();
+		double deltaTime;
+		double lastFrameTime;
+
 #pragma region imgui
 		ImGui::CreateContext();
 		ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -115,9 +119,13 @@ int main(void)
 		{
 			GLCall(glClear(GL_COLOR_BUFFER_BIT));
 
+			currentFrameTime = glfwGetTime();
+			deltaTime = currentFrameTime - lastFrameTime;
+			lastFrameTime = currentFrameTime;
+
 			if (currentScene)
 			{
-				currentScene->OnUpdate(0.0f);
+				currentScene->OnUpdate(deltaTime);
 				currentScene->OnRender();
 			}
 

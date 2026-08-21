@@ -30,6 +30,7 @@ public:
   void Unbind() const;
 
   // set uniforms
+  void SetUniform1d(const std::string &name, double value);
   void SetUniform1i(const std::string &name, int value);
   void SetUniform1iv(const std::string &name, unsigned int size, int *value);
   void SetUniform1f(const std::string &name, float value);

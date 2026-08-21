@@ -15,6 +15,7 @@ namespace jking::scene
     BasicTriangleScene();
     ~BasicTriangleScene() {}
 
+    void OnUpdate(float deltaTime) override;
     void OnRender() override;
     void OnImGuiRender() override;
 
