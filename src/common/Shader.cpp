@@ -5,23 +5,63 @@
 #include <fstream>
 #include <sstream>
 
+/* Generic function for error handling */
+// PFNGLGETSHADERIVPROC and PFNGLGETSHADERINFOLOGPROC are just function definitions that are same for shader/program
+bool CheckStatus(GLuint objectID, PFNGLGETSHADERIVPROC objectPropertyGetterFunc, PFNGLGETSHADERINFOLOGPROC infoLogFunc, GLenum statusType)
+{
+  // /* Error handling */
+  int status;
+  GLCall(objectPropertyGetterFunc(objectID, statusType, &status));
+  // GL_FALSE is just 0, so we could also write if(!status){...}
+  if (status == GL_FALSE)
+  {
+    int length;
+    GLCall(objectPropertyGetterFunc(objectID, GL_INFO_LOG_LENGTH, &length));
+    // char message[length];
+    // alloca allows to allocate on stack dynamically. C++ may complain about allocating memory on stack with variable length `char message[length]`.
+    char *message = (char *)alloca(length * sizeof(char));
+    GLCall(infoLogFunc(objectID, length, &length, message));
+    std::cout << "Failed to link shaders " << std::endl;
+    std::cout << message << std::endl;
+    return false;
+  }
+
+  return true;
+}
+
+bool CheckProgramStatus(GLuint programId)
+{
+  return CheckStatus(programId, glGetProgramiv, glGetProgramInfoLog, GL_LINK_STATUS);
+}
+
+bool CheckShaderStatus(GLuint shaderId)
+{
+  return CheckStatus(shaderId, glGetShaderiv, glGetShaderInfoLog, GL_COMPILE_STATUS);
+}
+
 /* Parse single shader from a file with single shader */
 std::string Shader::ParseSingleShader(const std::string &filepath)
 {
   std::ifstream stream{filepath};
-  std::string line;
-  std::string shader;
-  while (std::getline(stream, line))
+
+  if (!stream.good())
   {
-    shader.append(line + "\n");
+    std::cout << "Error: Unable to open shader file: " << filepath << std::endl;
+    exit(1);
   }
-  return shader;
+  return std::string(std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>());
 }
 
 /* Parse fragment and vertex shaders from single file */
 ShaderProgramSource Shader::ParseShader(const std::string &filepath)
 {
   std::ifstream stream{filepath};
+
+  if (!stream.good())
+  {
+    std::cout << "Error: Unable to open shader file: " << filepath << std::endl;
+    exit(1);
+  }
 
   enum class ShaderType
   {
@@ -67,24 +107,10 @@ unsigned int Shader::CompileShader(unsigned int type, const std::string &source)
   GLCall(glShaderSource(id, 1, &src, nullptr));
   GLCall(glCompileShader(id));
 
-  // /* Error handling */
-  int result;
-  GLCall(glGetShaderiv(id, GL_COMPILE_STATUS, &result));
-  // GL_FALSE is just 0, so we could also write if(!result){...}
-  if (result == GL_FALSE)
+  if (!CheckShaderStatus(id))
   {
-    int length;
-    GLCall(glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length));
-    // char message[length];
-    // alloca allows to allocate on stack dynamically. C++ may complain about allocating memory on stack with variable length `char message[length]`.
-    char *message = (char *)alloca(length * sizeof(char));
-    GLCall(glGetShaderInfoLog(id, length, &length, message));
-    std::cout << "Failed to compile " << (type == GL_VERTEX_SHADER ? "vertex" : "fragment") << " shader!" << std::endl;
-    std::cout << message << std::endl;
-    GLCall(glDeleteShader(id));
     return 0;
   }
-
   return id;
 }
 
@@ -97,6 +123,10 @@ unsigned int Shader::CreateShader(const std::string &vertexShader, const std::st
   GLCall(glAttachShader(program, vs));
   GLCall(glAttachShader(program, fs));
   GLCall(glLinkProgram(program));
+  if (!CheckProgramStatus(program))
+  {
+    return 0;
+  }
   GLCall(glValidateProgram(program));
 
   // The program is created, we can delete intermediate shaders (like .obj files)
