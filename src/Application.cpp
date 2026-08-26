@@ -14,7 +14,7 @@
 #include "cherno/scenes/SceneBatchColor.h"
 #include "cherno/scenes/SceneBatchTexture.h"
 #include "cherno/scenes/SceneBatchDynamic.h"
-#include "jamieKing/scenes/SceneBasicTriangle.h"
+#include "jamieKing/scenes/BasicTriangle/SceneBasicTriangle.h"
 #include "Scene.h"
 #include "SceneMenu.h"
 

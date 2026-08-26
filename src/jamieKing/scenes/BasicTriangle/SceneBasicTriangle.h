@@ -5,7 +5,7 @@
 #include <iostream>
 #include "Scene.h"
 #include "Renderer.h"
-#include "../../common/Shader.h"
+#include "../../../common/Shader.h"
 
 namespace jking::scene
 {
