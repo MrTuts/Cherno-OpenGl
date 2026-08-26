@@ -15,6 +15,7 @@
 #include "cherno/scenes/SceneBatchTexture.h"
 #include "cherno/scenes/SceneBatchDynamic.h"
 #include "jamieKing/scenes/BasicTriangle/SceneBasicTriangle.h"
+#include "jamieKing/scenes/DepthBuffer/SceneDepthBuffer.h"
 #include "Scene.h"
 #include "SceneMenu.h"
 
@@ -104,6 +105,7 @@ int main(void)
 		sceneMenu->RegisterChernoScene<cherno::scene::SceneBatchTexture>("Batch texture render");
 		sceneMenu->RegisterChernoScene<cherno::scene::SceneBatchDynamic>("Batch dynamic render");
 		sceneMenu->RegisterJKingScene<jking::scene::BasicTriangleScene>("Basic triangle");
+		sceneMenu->RegisterJKingScene<jking::scene::DepthBufferScene>("Depth buffer");
 
 		double currentFrameTime = glfwGetTime();
 		double deltaTime;

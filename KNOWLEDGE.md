@@ -793,6 +793,48 @@ Rule: sampler value is the **texture unit index**, not texture object ID.
 
 ---
 
+## Depth Buffer
+
+The depth buffer (z-buffer) is a 2D array of floating-point values, one per pixel, that tracks the depth of the closest fragment written to each pixel so far. It allows OpenGL to automatically discard fragments that are behind already-drawn geometry.
+
+### Enabling depth testing
+
+```cpp
+glEnable(GL_DEPTH_TEST);
+```
+
+This comes with a small performance cost. When enabled, every `glDrawElements` / `glDrawArrays` call performs a per-fragment depth test before writing to the framebuffer.
+
+### How the depth test works
+
+- The buffer is initialized to `1.0` (furthest from camera) by `glClear(GL_DEPTH_BUFFER_BIT)`.
+- The z-axis convention: `+1.0` is furthest from the camera; `-1.0` is closest. Only `z ∈ [-1, 1]` (NDC) is rendered; anything outside fails and is clipped.
+- Default test function is `GL_LESS`: the new fragment is written **only if** its depth is strictly less than the stored depth. On equal depth the existing fragment wins.
+- Like other vertex attributes, the `z` value is **interpolated** across the triangle between its vertices.
+
+```
+if (newDepth < storedDepth)  →  write fragment + update depth buffer
+else                         →  discard fragment
+```
+
+### Clearing the depth buffer each frame
+
+```cpp
+glClear(GL_DEPTH_BUFFER_BIT);  // resets all depth values to 1.0 (furthest away)
+```
+
+Both bit flags can be combined:
+
+```cpp
+glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+```
+
+### Depth buffer and alpha blending
+
+The depth buffer alone cannot handle transparent objects correctly — a transparent fragment still writes to the depth buffer and occludes geometry behind it. The standard workaround is to draw opaque objects first (with depth write enabled), then draw transparent objects sorted **back to front** (painter's algorithm), optionally with depth writes disabled (`glDepthMask(GL_FALSE)`) during the transparent pass.
+
+---
+
 ## Alpha Blending
 
 OpenGL does not blend by default — every fragment written to the framebuffer simply replaces what was there. Blending must be explicitly enabled and configured.
