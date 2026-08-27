@@ -9,11 +9,11 @@
 
 namespace jking::scene
 {
-  class DepthBufferScene : public ::scene::Scene
+  class SceneDepthBuffer : public ::scene::Scene
   {
   public:
-    DepthBufferScene();
-    ~DepthBufferScene() {}
+    SceneDepthBuffer();
+    ~SceneDepthBuffer();
 
     void OnUpdate(float deltaTime) override;
     void OnRender() override;

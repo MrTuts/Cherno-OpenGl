@@ -7,7 +7,7 @@
 
 namespace jking::scene
 {
-  BasicTriangleScene::BasicTriangleScene()
+  SceneBasicTriangle::SceneBasicTriangle()
   {
     // clang-format off
     GLfloat vertices[] = {
@@ -47,18 +47,18 @@ namespace jking::scene
     m_Shader->SetUniform1d("u_elapsedTime", glfwGetTime());
   }
 
-  void BasicTriangleScene::OnUpdate(float deltaTime)
+  void SceneBasicTriangle::OnUpdate(float deltaTime)
   {
     m_Shader->SetUniform1d("u_elapsedTime", glfwGetTime());
   }
 
-  void BasicTriangleScene::OnRender()
+  void SceneBasicTriangle::OnRender()
   {
 
     GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, nullptr));
   }
 
-  void BasicTriangleScene::OnImGuiRender()
+  void SceneBasicTriangle::OnImGuiRender()
   {
   }
 }

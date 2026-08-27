@@ -16,6 +16,7 @@
 #include "cherno/scenes/SceneBatchDynamic.h"
 #include "jamieKing/scenes/BasicTriangle/SceneBasicTriangle.h"
 #include "jamieKing/scenes/DepthBuffer/SceneDepthBuffer.h"
+#include "jamieKing/scenes/ColorBuffer/SceneColorBuffer.h"
 #include "Scene.h"
 #include "SceneMenu.h"
 
@@ -104,8 +105,9 @@ int main(void)
 		sceneMenu->RegisterChernoScene<cherno::scene::SceneBatchColor>("Batch color render");
 		sceneMenu->RegisterChernoScene<cherno::scene::SceneBatchTexture>("Batch texture render");
 		sceneMenu->RegisterChernoScene<cherno::scene::SceneBatchDynamic>("Batch dynamic render");
-		sceneMenu->RegisterJKingScene<jking::scene::BasicTriangleScene>("Basic triangle");
-		sceneMenu->RegisterJKingScene<jking::scene::DepthBufferScene>("Depth buffer");
+		sceneMenu->RegisterJKingScene<jking::scene::SceneBasicTriangle>("Basic triangle");
+		sceneMenu->RegisterJKingScene<jking::scene::SceneDepthBuffer>("Depth buffer");
+		sceneMenu->RegisterJKingScene<jking::scene::SceneColorBuffer>("Color buffer");
 
 		double currentFrameTime = glfwGetTime();
 		double deltaTime;
@@ -119,7 +121,10 @@ int main(void)
 
 		while (!glfwWindowShouldClose(window))
 		{
-			GLCall(glClear(GL_COLOR_BUFFER_BIT));
+			if (!(currentScene->controlsBuffer()))
+			{
+				GLCall(glClear(GL_COLOR_BUFFER_BIT));
+			}
 
 			currentFrameTime = glfwGetTime();
 			deltaTime = currentFrameTime - lastFrameTime;

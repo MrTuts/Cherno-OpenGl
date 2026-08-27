@@ -9,11 +9,11 @@
 
 namespace jking::scene
 {
-  class SceneBasicTriangle : public ::scene::Scene
+  class SceneColorBuffer : public ::scene::Scene
   {
   public:
-    SceneBasicTriangle();
-    ~SceneBasicTriangle() {}
+    SceneColorBuffer();
+    ~SceneColorBuffer() {}
 
     void OnUpdate(float deltaTime) override;
     void OnRender() override;

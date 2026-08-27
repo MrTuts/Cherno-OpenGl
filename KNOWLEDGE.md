@@ -101,7 +101,18 @@ while (!glfwWindowShouldClose(window))
 }
 ```
 
-Double buffering: you always draw to the **back buffer**; `glfwSwapBuffers` flips it to the screen atomically so you never see a half-drawn frame.
+### Double buffering — front and back color buffers
+
+The default framebuffer has two color buffers:
+
+- **Front buffer** — currently displayed on screen; the OS reads this to composite the window.
+- **Back buffer** — the active render target; all `gl*` draw calls write here.
+
+`glfwSwapBuffers` swaps their roles: the back buffer becomes the front (is displayed) and the former front becomes the new back (cleared and ready for the next frame). The swap happens atomically with respect to the vertical sync signal, preventing screen tearing.
+
+`glClear(GL_COLOR_BUFFER_BIT)` clears the **back buffer** — the one you are about to draw into. Omitting it leaves stale content from the last time that physical buffer was the back buffer, which was **two frames ago** (not one), because the two buffers alternate.
+
+**Observing the swap without clearing**: if you push data incrementally into a VBO and draw without clearing, you see two alternating partial states. Buffer A receives frames 1, 3, 5 … and buffer B receives frames 2, 4, 6 … — each fills up independently at half the update rate. The scene `SceneColorBuffer` exploits this to make the double-buffer mechanics visible: it adds one triangle per frame and skips `glClear`, so you observe each buffer catching up separately until both hold the complete picture.
 
 ### `glfwSwapInterval` — VSync control
 

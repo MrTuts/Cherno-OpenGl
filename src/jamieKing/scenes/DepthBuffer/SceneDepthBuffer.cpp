@@ -7,7 +7,7 @@
 
 namespace jking::scene
 {
-  DepthBufferScene::DepthBufferScene()
+  SceneDepthBuffer::SceneDepthBuffer()
   {
     const float RED_TRIANGLE_Z = 0.5f;
     const float BLUE_TRIANGLE_Z = -0.5f;
@@ -63,19 +63,24 @@ namespace jking::scene
     m_Shader->SetUniform1d("u_elapsedTime", glfwGetTime());
   }
 
-  void DepthBufferScene::OnUpdate(float deltaTime)
+  SceneDepthBuffer::~SceneDepthBuffer()
+  {
+    GLCall(glDisable(GL_DEPTH_TEST));
+  }
+
+  void SceneDepthBuffer::OnUpdate(float deltaTime)
   {
     m_Shader->SetUniform1d("u_elapsedTime", glfwGetTime());
   }
 
-  void DepthBufferScene::OnRender()
+  void SceneDepthBuffer::OnRender()
   {
     // clear the depth buffer array, every value is set to 1.0 (furthest away)
     glClear(GL_DEPTH_BUFFER_BIT);
     GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, nullptr));
   }
 
-  void DepthBufferScene::OnImGuiRender()
+  void SceneDepthBuffer::OnImGuiRender()
   {
   }
 }
