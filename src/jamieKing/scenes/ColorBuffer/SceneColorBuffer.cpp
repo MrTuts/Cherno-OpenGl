@@ -1,4 +1,3 @@
-#pragma once
 #include "SceneColorBuffer.h"
 #include <GLFW/glfw3.h>
 
@@ -10,49 +9,6 @@ static const uint NUM_VERTICES_PER_TRI = 3;
 static const uint NUM_FLOAT_PER_VERTEX = 6;
 static const uint TRIANGL_BYTE_SIZE = NUM_VERTICES_PER_TRI * NUM_FLOAT_PER_VERTEX * sizeof(float);
 static const uint MAX_TRIS = 20;
-static uint numTris = 0;
-static double lastUpdate = 0;
-static bool bufferFilled = false;
-
-static void sendAnotherTriangleToOpenGL()
-{
-  if (numTris == MAX_TRIS)
-  {
-    bufferFilled = true;
-    numTris = 0;
-    return;
-  }
-  if (bufferFilled)
-  {
-    numTris++;
-    return;
-  }
-
-  const GLfloat THIS_TRI_X = -1 + numTris * X_DELTA;
-  // clang-format off
-    GLfloat thisTri[] = {
-      THIS_TRI_X, 1.0f, 0.0f,
-      1.0f, 0.0f, 0.0f,
-
-      THIS_TRI_X + X_DELTA, 1.0f, 0.0f,
-      1.0f, 0.0f, 0.0f,
-
-      THIS_TRI_X, 0.0f, 0.0f,
-      1.0f, 0.0f, 0.0f,
-    };
-  // clang-format on
-
-  /*
-    There are two color buffers, front and back buffer, which switch places.
-    Front buffer is what is currently drawn.
-    Back buffer is where we push new data.
-    In Application.cpp we swap these buffers after each render.
-    This means that when we push data here on each frame, part of it is pushed to one buffer, the other part to the second buffer.
-    When we do not clear the color buffer, we can see how the buffer swap (though it happens very fast) - each containing part of the data, until they are both filled.
-   */
-  GLCall(glBufferSubData(GL_ARRAY_BUFFER, numTris * TRIANGL_BYTE_SIZE, TRIANGL_BYTE_SIZE, thisTri));
-  numTris++;
-}
 
 namespace jking::scene
 {
@@ -60,15 +16,13 @@ namespace jking::scene
   SceneColorBuffer::SceneColorBuffer()
   {
     m_ControlsBuffer = true;
-    bufferFilled = false;
-    numTris = 0;
 
     GLCall(glGenVertexArrays(1, &m_VAO_ID));
     GLCall(glBindVertexArray(m_VAO_ID));
 
     GLCall(glGenBuffers(1, &m_VBO_ID));
     GLCall(glBindBuffer(GL_ARRAY_BUFFER, m_VBO_ID));
-    // prealocate
+    // reserve VBO space without uploading data; triangles are written incrementally via glBufferSubData
     GLCall(glBufferData(GL_ARRAY_BUFFER, MAX_TRIS * TRIANGL_BYTE_SIZE, NULL, GL_STATIC_DRAW));
 
     GLCall(glEnableVertexAttribArray(0));
@@ -84,18 +38,56 @@ namespace jking::scene
   void SceneColorBuffer::OnUpdate(float deltaTime)
   {
     const double time = glfwGetTime();
-    if (time - lastUpdate < 0.016)
+    if (time - m_LastUpdate < 0.5)
+      return;
+    m_LastUpdate = time;
+
+    if (m_NumTris == MAX_TRIS)
     {
-      // return;
+      m_NumTris = 0;
     }
-    lastUpdate = time;
-    sendAnotherTriangleToOpenGL();
+
+    const GLfloat THIS_TRI_X = -1 + m_NumTris * X_DELTA;
+    // clang-format off
+    GLfloat thisTri[] = {
+      THIS_TRI_X, 1.0f, 0.0f,
+      1.0f, 0.0f, 0.0f,
+
+      THIS_TRI_X + X_DELTA, 1.0f, 0.0f,
+      1.0f, 0.0f, 0.0f,
+
+      THIS_TRI_X, 0.0f, 0.0f,
+      1.0f, 0.0f, 0.0f,
+    };
+    // clang-format on
+
+    /*
+      There are two color buffers, front and back buffer, which switch places.
+      Front buffer is what is currently drawn.
+      Back buffer is where we push new data.
+      In Application.cpp we swap these buffers after each render.
+      This means that when we push data here on each frame, part of it is pushed to one buffer, the other part to the second buffer.
+      When we do not clear the color buffer, we can see how the buffer swap (though it happens very fast) - each containing part of the data, until they are both filled.
+     */
+    // glBufferSubData writes to the VBO (shared GPU memory) — NOT to the back color buffer.
+    // The draw call in OnRender is what writes pixels into the back color buffer.
+    GLCall(glBufferSubData(GL_ARRAY_BUFFER, m_NumTris * TRIANGL_BYTE_SIZE, TRIANGL_BYTE_SIZE, thisTri));
+    m_NumTris++;
+    m_TriangleAdded = true;
   }
 
   void SceneColorBuffer::OnRender()
   {
-    GLCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-    GLCall(glDrawArrays(GL_TRIANGLES, (numTris - 1) * NUM_VERTICES_PER_TRI, NUM_VERTICES_PER_TRI));
+    // No clear — stale pixels remain, so each physical buffer accumulates its own set of triangles.
+    // GLCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+
+    // Only draw on the single frame a triangle was added; this ensures the triangle's pixels land
+    // in exactly one physical color buffer. Without this guard, OnRender fires every frame and
+    // stamps the same triangle into both back buffers before the next addition, preventing flickering.
+    if (!m_TriangleAdded)
+      return;
+    m_TriangleAdded = false;
+    GLCall(glDrawArrays(GL_TRIANGLES, (m_NumTris - 1) * NUM_VERTICES_PER_TRI, NUM_VERTICES_PER_TRI));
   }
 
   void SceneColorBuffer::OnImGuiRender()

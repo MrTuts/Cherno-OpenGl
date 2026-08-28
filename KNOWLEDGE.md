@@ -114,6 +114,37 @@ The default framebuffer has two color buffers:
 
 **Observing the swap without clearing**: if you push data incrementally into a VBO and draw without clearing, you see two alternating partial states. Buffer A receives frames 1, 3, 5 … and buffer B receives frames 2, 4, 6 … — each fills up independently at half the update rate. The scene `SceneColorBuffer` exploits this to make the double-buffer mechanics visible: it adds one triangle per frame and skips `glClear`, so you observe each buffer catching up separately until both hold the complete picture.
 
+### VBO vs. color buffers — a critical distinction
+
+A **VBO** (Vertex Buffer Object) and the **front/back color buffers** are completely separate pieces of GPU memory with different purposes:
+
+| | VBO | Color buffer |
+|---|---|---|
+| Contains | Vertex data (positions, UVs, etc.) | Rendered pixel output (RGBA per pixel) |
+| Double-buffered? | **No** — one copy shared by all frames | **Yes** — front and back alternate each frame |
+| Written by | `glBufferData` / `glBufferSubData` (CPU→GPU upload) | `glDrawArrays` / `glDrawElements` (GPU rasterization) |
+| Read by | Vertex shader during a draw call | OS compositor (front), GPU rasterizer (back) |
+
+`glBufferSubData` updates the VBO immediately and **both** color buffer passes can read that change. It does **not** write to whichever color buffer is currently the back buffer.
+
+`glDrawArrays` / `glDrawElements` is what **reads** the VBO and **writes pixels** into the current back color buffer.
+
+### Why `OnRender` must fire only once per triangle addition
+
+This is about `SceneColorBuffer.cpp`
+
+If `OnRender` fires every frame (which it does by default in the render loop), the same triangle gets rasterized into **both** physical buffers during the wait period between additions:
+
+```
+Frame N   (back = B1): OnUpdate adds triangle → OnRender draws it into B1. Swap.
+Frame N+1 (back = B2): OnUpdate does nothing  → OnRender draws same triangle into B2. Swap.
+Frame N+2 (back = B1): same.  Both B1 and B2 now contain triangle N before triangle N+1 is added.
+```
+
+The result: triangles "add up" identically on both buffers — no flickering.
+
+The fix is a `m_TriangleAdded` flag: set it in `OnUpdate` when a triangle is uploaded, and in `OnRender` skip the draw call and clear the flag. Each triangle then lands in exactly **one** physical buffer. The other buffer is untouched during the wait, so the two buffers diverge and flickering is visible.
+
 ### `glfwSwapInterval` — VSync control
 
 ```cpp

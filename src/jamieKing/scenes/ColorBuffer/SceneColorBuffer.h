@@ -24,5 +24,8 @@ namespace jking::scene
     GLuint m_VBO_ID;
     GLuint m_IBO_ID;
     std::unique_ptr<Shader> m_Shader;
+    uint m_NumTris;
+    double m_LastUpdate;
+    bool m_TriangleAdded = false;
   };
 }
