@@ -987,7 +987,9 @@ For a full 3D camera, `glm::lookAt(position, target, up)` constructs this matrix
 
 ### Projection Matrix
 
-Transforms from **camera space** into **clip space** (the `[-1, 1]` NDC cube that OpenGL rasterizes). It defines how your working coordinate system maps to the screen.
+Transforms from **camera space** into **clip space**, then implicitly into **NDC** (Normalized Device Coordinates). NDC is the canonical coordinate system OpenGL rasterizes in: x, y, and z each range from `−1` to `+1`, the screen centre is `(0, 0)`, and anything outside the `[−1, 1]³` cube is clipped and never reaches the fragment shader. The conversion from clip space to NDC is the **perspective divide** — the GPU divides the vertex's x, y, z by its w component automatically after the vertex shader. The projection matrix is what sets up `w` so that division produces the right NDC values.
+
+The projection matrix defines how your working coordinate system maps to this NDC cube.
 
 **Orthographic projection** (`glm::ortho`) — objects do not shrink with distance. Used for 2D, UI, and technical drawings:
 
@@ -1002,7 +1004,42 @@ This maps x ∈ `[0, 640]` and y ∈ `[0, 480]` to NDC `[-1, 1]`. It lets you sp
 float vertices[] = { 240.0f, 180.0f, ... }; // pixel coords, not NDC
 ```
 
-**Perspective projection** (`glm::perspective`) — objects shrink with distance, giving a realistic 3D look.
+**Perspective projection** (`glm::perspective`) — objects shrink with distance, giving a realistic 3D look. It maps a **view frustum** (a truncated pyramid defined by FOV, aspect ratio, and clip planes) to the NDC cube.
+
+```cpp
+glm::mat4 proj = glm::perspective(
+    glm::radians(45.0f),  // vertical field of view
+    640.0f / 480.0f,      // aspect ratio (width / height)
+    0.1f,                 // near clip plane — closer fragments are clipped
+    100.0f                // far clip plane — farther fragments are clipped
+);
+```
+
+A wider FOV widens the visible area and distorts edges (wide-angle lens effect); a narrower FOV zooms in and compresses depth (telephoto effect). Fragments outside the frustum are clipped before the fragment shader runs.
+
+#### Right-handed vs left-handed coordinate systems
+
+**OpenGL uses a right-handed coordinate system** in view/eye space:
+
+- +X right, +Y up, **+Z toward the viewer** (out of the screen)
+- Objects in front of the camera sit at **negative Z** values
+
+**DirectX uses a left-handed coordinate system**:
+
+- +X right, +Y up, **+Z away from the viewer** (into the screen)
+- Objects in front of the camera sit at **positive Z** values
+
+The right-hand rule: point the fingers of your right hand along +X and curl them toward +Y — your thumb points in the +Z direction (toward you). Doing the same with your left hand points +Z away from you (left-handed).
+
+| | OpenGL | DirectX |
+|---|---|---|
+| Handedness | Right-handed | Left-handed |
+| "In front of camera" | Negative Z | Positive Z |
+| GLM function | `glm::perspective` (default, RH) | `glm::perspectiveLH` |
+
+`glm::perspective` generates a right-handed projection matrix by default, matching OpenGL convention. Targeting DirectX or Vulkan requires `glm::perspectiveLH` or the compile-time define `GLM_FORCE_LEFT_HANDED`.
+
+> **Caveat**: OpenGL's *final* NDC space is technically left-handed — the projection transform negates Z so that +Z in NDC points away from the viewer. The "OpenGL is right-handed" statement refers to **view/eye space** (before projection), which is the space you set up cameras and place objects in.
 
 ---
 
