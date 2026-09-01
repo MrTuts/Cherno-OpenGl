@@ -5,10 +5,10 @@
 #include "../../../common/Shader.h"
 
 static const float X_DELTA = 0.1f;
-static const uint NUM_VERTICES_PER_TRI = 3;
-static const uint NUM_FLOAT_PER_VERTEX = 6;
-static const uint TRIANGL_BYTE_SIZE = NUM_VERTICES_PER_TRI * NUM_FLOAT_PER_VERTEX * sizeof(float);
-static const uint MAX_TRIS = 20;
+static const unsigned int NUM_VERTICES_PER_TRI = 3;
+static const unsigned int NUM_FLOAT_PER_VERTEX = 6;
+static const unsigned int TRIANGL_BYTE_SIZE = NUM_VERTICES_PER_TRI * NUM_FLOAT_PER_VERTEX * sizeof(float);
+static const unsigned int MAX_TRIS = 20;
 
 namespace jking::scene
 {

@@ -112,8 +112,8 @@ int main(void)
 		sceneMenu->RegisterJKingScene<jking::scene::SceneBasicCube>("Basic cube");
 
 		double currentFrameTime = glfwGetTime();
-		double deltaTime;
-		double lastFrameTime;
+		double deltaTime = 0.0;
+		double lastFrameTime = 0.0;
 
 #pragma region imgui
 		ImGui::CreateContext();

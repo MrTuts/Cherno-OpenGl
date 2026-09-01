@@ -1,6 +1,7 @@
 #pragma once
 #include "SceneBasicTriangle.h"
 #include <GLFW/glfw3.h>
+#include <filesystem>
 
 #include "Renderer.h"
 #include "../../../common/Shader.h"
@@ -42,7 +43,12 @@ namespace jking::scene
     GLCall(glEnableVertexAttribArray(1));
     GLCall(glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(sizeof(float) * 2)));
 
-    m_Shader = std::make_unique<Shader>("src/jamieKing/scenes/BasicTriangle/BasicTriangle.vert", "src/jamieKing/scenes/BasicTriangle/BasicTriangle.frag");
+    const auto currentDir = std::filesystem::path(__FILE__).parent_path();
+
+    m_Shader = std::make_unique<Shader>(
+        (currentDir / "BasicTriangle.vert").string(),
+        (currentDir / "BasicTriangle.frag").string()
+        );
     m_Shader->Bind();
     m_Shader->SetUniform1d("u_elapsedTime", glfwGetTime());
   }
