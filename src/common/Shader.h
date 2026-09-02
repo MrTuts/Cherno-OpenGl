@@ -2,7 +2,10 @@
 
 #include <string>
 #include <unordered_map>
+#include <filesystem>
 #include "glm/glm.hpp"
+
+#define RELATIVE_SHADER_PATH(a) (std::filesystem::path(__FILE__).parent_path() / a).string()
 
 struct ShaderProgramSource
 {

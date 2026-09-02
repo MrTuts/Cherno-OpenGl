@@ -1,7 +1,6 @@
 #pragma once
 #include "SceneBasicTriangle.h"
 #include <GLFW/glfw3.h>
-#include <filesystem>
 
 #include "Renderer.h"
 #include "../../../common/Shader.h"
@@ -46,9 +45,8 @@ namespace jking::scene
     const auto currentDir = std::filesystem::path(__FILE__).parent_path();
 
     m_Shader = std::make_unique<Shader>(
-        (currentDir / "BasicTriangle.vert").string(),
-        (currentDir / "BasicTriangle.frag").string()
-        );
+        RELATIVE_SHADER_PATH("BasicTriangle.vert"),
+        RELATIVE_SHADER_PATH("BasicTriangle.frag"));
     m_Shader->Bind();
     m_Shader->SetUniform1d("u_elapsedTime", glfwGetTime());
   }

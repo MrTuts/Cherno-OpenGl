@@ -32,7 +32,7 @@ namespace jking::scene
     GLCall(glEnableVertexAttribArray(1));
     GLCall(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)(sizeof(float) * 3)));
 
-    m_Shader = std::make_unique<Shader>("src/jamieKing/scenes/BasicCube/BasicCube.vert", "src/jamieKing/scenes/BasicCube/BasicCube.frag");
+    m_Shader = std::make_unique<Shader>(RELATIVE_SHADER_PATH("BasicCube.vert"), RELATIVE_SHADER_PATH("BasicCube.frag"));
     m_Shader->Bind();
     shapeData.cleanup();
   }

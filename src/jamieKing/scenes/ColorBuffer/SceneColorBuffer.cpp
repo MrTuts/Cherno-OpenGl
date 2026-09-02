@@ -31,7 +31,7 @@ namespace jking::scene
     GLCall(glEnableVertexAttribArray(1));
     GLCall(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(sizeof(float) * 3)));
 
-    m_Shader = std::make_unique<Shader>("src/jamieKing/scenes/ColorBuffer/ColorBuffer.vert", "src/jamieKing/scenes/ColorBuffer/ColorBuffer.frag");
+    m_Shader = std::make_unique<Shader>(RELATIVE_SHADER_PATH("ColorBuffer.vert"), RELATIVE_SHADER_PATH("ColorBuffer.frag"));
     m_Shader->Bind();
   }
 

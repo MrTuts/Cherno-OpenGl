@@ -58,7 +58,7 @@ namespace jking::scene
     GLCall(glEnableVertexAttribArray(1));
     GLCall(glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void *)(sizeof(float) * 3)));
 
-    m_Shader = std::make_unique<Shader>("src/jamieKing/scenes/DepthBuffer/DepthBuffer.vert", "src/jamieKing/scenes/DepthBuffer/DepthBuffer.frag");
+    m_Shader = std::make_unique<Shader>(RELATIVE_SHADER_PATH("DepthBuffer.vert"), RELATIVE_SHADER_PATH("DepthBuffer.frag"));
     m_Shader->Bind();
     m_Shader->SetUniform1d("u_elapsedTime", glfwGetTime());
   }
