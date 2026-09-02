@@ -1,5 +1,6 @@
 #pragma once
 
+#include <GLFW/glfw3.h>
 #include <iostream>
 #include <vector>
 #include <functional>
@@ -16,7 +17,7 @@ namespace scene
     virtual ~Scene() {}
 
     virtual void OnUpdate(float deltaTime) {}
-    virtual void OnRender() {}
+    virtual void OnRender(GLFWwindow *window) {}
     virtual void OnImGuiRender() {}
 
     inline bool controlsBuffer()

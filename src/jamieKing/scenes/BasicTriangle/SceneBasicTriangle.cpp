@@ -56,7 +56,7 @@ namespace jking::scene
     m_Shader->SetUniform1d("u_elapsedTime", glfwGetTime());
   }
 
-  void SceneBasicTriangle::OnRender()
+  void SceneBasicTriangle::OnRender(GLFWwindow *window)
   {
 
     GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, nullptr));

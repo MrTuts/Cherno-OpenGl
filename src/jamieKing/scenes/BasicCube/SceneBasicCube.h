@@ -7,6 +7,7 @@
 #include "Renderer.h"
 #include "../../../common/Shader.h"
 #include "../../primitives/ShapeData.h"
+#include <glm/glm.hpp>
 
 namespace jking::scene
 {
@@ -14,10 +15,10 @@ namespace jking::scene
   {
   public:
     SceneBasicCube();
-    ~SceneBasicCube() {}
+    ~SceneBasicCube();
 
     void OnUpdate(float deltaTime) override;
-    void OnRender() override;
+    void OnRender(GLFWwindow *window) override;
     void OnImGuiRender() override;
 
   private:
@@ -25,6 +26,8 @@ namespace jking::scene
     GLuint m_VBO_ID;
     GLuint m_IBO_ID;
     std::unique_ptr<Shader> m_Shader;
+    unsigned int m_NumIndices;
+    glm::mat4 m_ModelTransformMatrix;
     // std::unique_ptr<ShapeData> shapeData;
   };
 }

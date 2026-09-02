@@ -74,7 +74,7 @@ namespace cherno::scene
   {
   }
 
-  void ScenePizza::OnRender()
+  void ScenePizza::OnRender(GLFWwindow *window)
   {
     texture.Bind();
     /* Rendering multiple objects

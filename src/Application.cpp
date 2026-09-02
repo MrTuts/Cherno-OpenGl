@@ -125,7 +125,7 @@ int main(void)
 		{
 			if (!(currentScene->controlsBuffer()))
 			{
-				GLCall(glClear(GL_COLOR_BUFFER_BIT));
+				GLCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 			}
 
 			currentFrameTime = glfwGetTime();
@@ -135,7 +135,7 @@ int main(void)
 			if (currentScene)
 			{
 				currentScene->OnUpdate(deltaTime);
-				currentScene->OnRender();
+				currentScene->OnRender(window);
 			}
 
 #pragma region imgui

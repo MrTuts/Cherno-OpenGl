@@ -19,7 +19,7 @@ namespace scene
   public:
     SceneMenu(Scene *&currentScenePtr);
 
-    void OnRender() override;
+    void OnRender(GLFWwindow *window) override;
     void OnImGuiRender() override;
 
     template <typename T>

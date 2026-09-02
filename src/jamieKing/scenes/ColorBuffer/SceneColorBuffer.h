@@ -16,7 +16,7 @@ namespace jking::scene
     ~SceneColorBuffer() {}
 
     void OnUpdate(float deltaTime) override;
-    void OnRender() override;
+    void OnRender(GLFWwindow *window) override;
     void OnImGuiRender() override;
 
   private:

@@ -76,7 +76,7 @@ namespace jking::scene
     m_TriangleAdded = true;
   }
 
-  void SceneColorBuffer::OnRender()
+  void SceneColorBuffer::OnRender(GLFWwindow *window)
   {
     // No clear — stale pixels remain, so each physical buffer accumulates its own set of triangles.
     // GLCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
