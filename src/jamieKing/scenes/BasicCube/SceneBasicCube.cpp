@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp> // for glm::perspective
+#include <imgui.h>
 
 #include "Renderer.h"
 #include "../../primitives/Vertex.h"
@@ -13,10 +14,9 @@
 namespace jking::scene
 {
 
-  SceneBasicCube::SceneBasicCube() : m_ModelTransformMatrix(glm::mat4(1.0f))
+  SceneBasicCube::SceneBasicCube() : m_Rotation(glm::vec3(20.0f, 20.0f, 0.0f)), m_Translation(glm::vec3(0.0f, 0.0f, -3.0f))
   {
     ShapeData shapeData = ShapeGenerator::makeCube();
-    m_ModelTransformMatrix = glm::translate(m_ModelTransformMatrix, glm::vec3(0.0f, 0.0f, -4.0f));
 
     GLCall(glGenVertexArrays(1, &m_VAO_ID));
     GLCall(glBindVertexArray(m_VAO_ID));
@@ -49,14 +49,6 @@ namespace jking::scene
 
   void SceneBasicCube::OnUpdate(float deltaTime)
   {
-    m_ModelTransformMatrix = glm::rotate(
-        m_ModelTransformMatrix,
-        glm::radians(deltaTime * 20.0f),
-        glm::vec3(0.0f, 1.0f, 0.0f));
-    m_ModelTransformMatrix = glm::rotate(
-        m_ModelTransformMatrix,
-        glm::radians(deltaTime * 20.0f),
-        glm::vec3(0.0f, 0.0f, 1.0f));
   }
 
   void SceneBasicCube::OnRender(GLFWwindow *window)
@@ -65,14 +57,36 @@ namespace jking::scene
 
     int width, height;
     glfwGetWindowSize(window, &width, &height);
-    glm::mat4 projectionMatrix = glm::perspective(glm::radians(60.0f), static_cast<float>(width / height), 0.1f, 10.0f);
 
-    m_Shader->SetUniformMat4f("modelTransformMatrix", m_ModelTransformMatrix);
-    m_Shader->SetUniformMat4f("projectionMatrix", projectionMatrix);
+    /* it's faster to calculate matrices here and pass one final matrix into the shader */
+
+    /* this is more obvious code how the matrices are multiplied, but need several intermediate matrices */
+    // glm::mat4 modelTranslationMatrix = glm::translate(glm::mat4(1.0f), m_Translation);
+    // glm::mat4 modelRotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(m_Rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+    // modelRotationMatrix = glm::rotate(modelRotationMatrix, glm::radians(m_Rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+    // modelRotationMatrix = glm::rotate(modelRotationMatrix, glm::radians(m_Rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+
+    // glm::mat4 projectionMatrix = glm::perspective(glm::radians(60.0f), static_cast<float>(width / height), 0.1f, 10.0f);
+    // glm::mat4 modelTransformMatrix = modelTranslationMatrix * modelRotationMatrix;
+    // glm::mat4 fullTransformMatrix = projectionMatrix * modelTransformMatrix;
+
+    /* less obvious how the matrices are multiplied, but we have single matrix on which we apply the transformations. The order of transformations is reversed */
+    // 3. project to perspective
+    glm::mat4 fullTransformMatrix = glm::perspective(glm::radians(60.0f), static_cast<float>(width / height), 0.1f, 10.0f);
+    // 2. translate
+    fullTransformMatrix = glm::translate(fullTransformMatrix, m_Translation);
+    // 1. rotate
+    fullTransformMatrix = glm::rotate(fullTransformMatrix, glm::radians(m_Rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+    fullTransformMatrix = glm::rotate(fullTransformMatrix, glm::radians(m_Rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+    fullTransformMatrix = glm::rotate(fullTransformMatrix, glm::radians(m_Rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+
+    m_Shader->SetUniformMat4f("fullTransformMatrix", fullTransformMatrix);
     GLCall(glDrawElements(GL_TRIANGLES, m_NumIndices, GL_UNSIGNED_SHORT, nullptr));
   }
 
   void SceneBasicCube::OnImGuiRender()
   {
+    ImGui::SliderFloat3("Rotation", &m_Rotation.x, 0.0f, 360.0f);
+    ImGui::SliderFloat3("Translation", &m_Translation.x, -15.0f, 11.0f);
   }
 }

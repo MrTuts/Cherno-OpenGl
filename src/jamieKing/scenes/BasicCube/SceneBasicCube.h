@@ -27,7 +27,8 @@ namespace jking::scene
     GLuint m_IBO_ID;
     std::unique_ptr<Shader> m_Shader;
     unsigned int m_NumIndices;
-    glm::mat4 m_ModelTransformMatrix;
+    glm::vec3 m_Rotation;
+    glm::vec3 m_Translation;
     // std::unique_ptr<ShapeData> shapeData;
   };
 }
