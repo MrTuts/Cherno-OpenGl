@@ -29,6 +29,9 @@ namespace jking::scene
     unsigned int m_NumIndices;
     glm::vec3 m_Rotation;
     glm::vec3 m_Translation;
+    float m_FOV;
+    float m_Near;
+    float m_Far;
     // std::unique_ptr<ShapeData> shapeData;
   };
 }

@@ -14,7 +14,7 @@
 namespace jking::scene
 {
 
-  SceneBasicCube::SceneBasicCube() : m_Rotation(glm::vec3(20.0f, 20.0f, 0.0f)), m_Translation(glm::vec3(0.0f, 0.0f, -3.0f))
+  SceneBasicCube::SceneBasicCube() : m_Rotation(glm::vec3(20.0f, 20.0f, 0.0f)), m_Translation(glm::vec3(0.0f, 0.0f, -3.0f)), m_FOV(60.0f), m_Near(0.1f), m_Far(10.0f)
   {
     ShapeData shapeData = ShapeGenerator::makeCube();
 
@@ -58,7 +58,7 @@ namespace jking::scene
     int width, height;
     glfwGetWindowSize(window, &width, &height);
 
-    /* it's faster to calculate matrices here and pass one final matrix into the shader */
+    /* Precomputing the combined matrix once per draw avoids repeating matrix multiplications for every vertex in the shader. */
 
     /* this is more obvious code how the matrices are multiplied, but need several intermediate matrices */
     // glm::mat4 modelTranslationMatrix = glm::translate(glm::mat4(1.0f), m_Translation);
@@ -72,7 +72,7 @@ namespace jking::scene
 
     /* less obvious how the matrices are multiplied, but we have single matrix on which we apply the transformations. The order of transformations is reversed */
     // 3. project to perspective
-    glm::mat4 fullTransformMatrix = glm::perspective(glm::radians(60.0f), static_cast<float>(width / height), 0.1f, 10.0f);
+    glm::mat4 fullTransformMatrix = glm::perspective(glm::radians(m_FOV), (static_cast<float>(width) / static_cast<float>(height)), m_Near, m_Far);
     // 2. translate
     fullTransformMatrix = glm::translate(fullTransformMatrix, m_Translation);
     // 1. rotate
@@ -88,5 +88,8 @@ namespace jking::scene
   {
     ImGui::SliderFloat3("Rotation", &m_Rotation.x, 0.0f, 360.0f);
     ImGui::SliderFloat3("Translation", &m_Translation.x, -15.0f, 11.0f);
+    ImGui::SliderFloat("FOW", &m_FOV, 0.0f, 360.0f);
+    ImGui::SliderFloat("Near plane", &m_Near, 0.0f, 10.0f);
+    ImGui::SliderFloat("Far plane", &m_Far, 0.0f, 50.0f);
   }
 }

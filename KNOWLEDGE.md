@@ -1017,6 +1017,27 @@ glm::mat4 proj = glm::perspective(
 
 A wider FOV widens the visible area and distorts edges (wide-angle lens effect); a narrower FOV zooms in and compresses depth (telephoto effect). Fragments outside the frustum are clipped before the fragment shader runs.
 
+#### Choosing near/far planes and z-fighting
+
+The near/far values are not just a clipping range — they control how much floating-point precision is available for depth comparisons. The depth buffer stores `z` mapped into NDC `[-1, 1]` (or `[0, 1]` depending on API), but that mapping is **non-linear**: precision is heavily concentrated near the near plane and gets rapidly coarser toward the far plane.
+
+$$
+z_{ndc} \approx \frac{far + near}{far - near} + \frac{1}{z_{eye}} \cdot \frac{-2 \cdot far \cdot near}{far - near}
+$$
+
+The `1/z_eye` term is what causes the non-linearity — small `z_eye` values near the camera map to a wide spread of NDC depth, while distant objects get compressed into a tiny sliver of the `[-1, 1]` range. Two vertices that are meters apart in world space can end up rounding to the **same stored depth value** once compressed into that tiny sliver and represented with a limited-precision float. When that happens, the depth test can't reliably determine which fragment is in front, and the two surfaces flicker between each other per-pixel as the camera moves — this is **z-fighting**.
+
+Two ratios make it worse:
+
+- **A large `far / near` ratio** stretches the non-linear mapping further, shrinking the precision available at any given distance. Setting `near` too small (e.g. `0.001` instead of `0.1`) is the most common cause — it doesn't just clip less, it steals precision from everything beyond it.
+- **Coplanar or near-coplanar geometry** (e.g. a decal or ground overlay sitting almost exactly on top of a floor mesh) is the case most likely to visibly z-fight, since both surfaces are trying to round to the same NDC depth bucket.
+
+Practical mitigations:
+
+- Keep `near` as large as the scene allows and `far` as small as the scene allows — don't default to `0.001` / `10000.0` "to be safe".
+- Avoid placing two separate surfaces at (near-)identical depth; offset one slightly instead.
+- If depth range is still insufficient, a **reversed-Z** buffer (mapping near→1, far→0) or a higher-precision depth format redistributes precision more evenly across the range — not used in this project, but the standard fix in engines with large view distances.
+
 #### Right-handed vs left-handed coordinate systems
 
 **OpenGL uses a right-handed coordinate system** in view/eye space:
@@ -1040,6 +1061,20 @@ The right-hand rule: point the fingers of your right hand along +X and curl them
 `glm::perspective` generates a right-handed projection matrix by default, matching OpenGL convention. Targeting DirectX or Vulkan requires `glm::perspectiveLH` or the compile-time define `GLM_FORCE_LEFT_HANDED`.
 
 > **Caveat**: OpenGL's *final* NDC space is technically left-handed — the projection transform negates Z so that +Z in NDC points away from the viewer. The "OpenGL is right-handed" statement refers to **view/eye space** (before projection), which is the space you set up cameras and place objects in.
+
+#### Right-hand rule and rotation direction (`glm::rotate`)
+
+Handedness also determines what counts as a **positive** rotation angle. This is a property of the math itself (any right-handed 3D coordinate system behaves this way), and GLM's `glm::rotate` follows it because it targets OpenGL's right-handed convention:
+
+```cpp
+glm::mat4 glm::rotate(mat4 const& m, float angleRadians, vec3 const& axis);
+```
+
+To find the direction a **positive** angle rotates an object around a given axis, point the right hand's thumb along the axis vector — the direction the fingers curl is the positive rotation direction. For example, with the thumb pointing along `+Z` (toward the viewer), the fingers curl from `+X` toward `+Y`, so a positive rotation about `+Z` turns the object counter-clockwise as seen by the viewer.
+
+The same rule applies per-axis for any rotation composed with `glm::rotate`, e.g. `glm::rotate(m, glm::radians(m_Rotation.x), glm::vec3(1.0f, 0.0f, 0.0f))` rotates positively from `+Y` toward `+Z` around the `X` axis.
+
+> If you flip to a left-handed setup (`GLM_FORCE_LEFT_HANDED`, or matching DirectX), the same positive angle value spins objects the opposite way — use the **left** hand's curl instead.
 
 ---
 
