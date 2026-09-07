@@ -66,21 +66,27 @@ namespace jking::scene
     // modelRotationMatrix = glm::rotate(modelRotationMatrix, glm::radians(m_Rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
     // modelRotationMatrix = glm::rotate(modelRotationMatrix, glm::radians(m_Rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
 
-    // glm::mat4 projectionMatrix = glm::perspective(glm::radians(60.0f), static_cast<float>(width / height), 0.1f, 10.0f);
     // glm::mat4 modelTransformMatrix = modelTranslationMatrix * modelRotationMatrix;
     // glm::mat4 fullTransformMatrix = projectionMatrix * modelTransformMatrix;
 
     /* less obvious how the matrices are multiplied, but we have single matrix on which we apply the transformations. The order of transformations is reversed */
-    // 3. project to perspective
-    glm::mat4 fullTransformMatrix = glm::perspective(glm::radians(m_FOV), (static_cast<float>(width) / static_cast<float>(height)), m_Near, m_Far);
+    glm::mat4 projectionMatrix = glm::perspective(glm::radians(m_FOV), (static_cast<float>(width) / static_cast<float>(height)), m_Near, m_Far);
     // 2. translate
-    fullTransformMatrix = glm::translate(fullTransformMatrix, m_Translation);
+    glm::mat4 fullTransformMatrix = glm::translate(projectionMatrix, m_Translation);
     // 1. rotate
     fullTransformMatrix = glm::rotate(fullTransformMatrix, glm::radians(m_Rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
     fullTransformMatrix = glm::rotate(fullTransformMatrix, glm::radians(m_Rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
     fullTransformMatrix = glm::rotate(fullTransformMatrix, glm::radians(m_Rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
 
     m_Shader->SetUniformMat4f("fullTransformMatrix", fullTransformMatrix);
+    GLCall(glDrawElements(GL_TRIANGLES, m_NumIndices, GL_UNSIGNED_SHORT, nullptr));
+
+    /* Cube 2 */
+    // 2. translate
+    glm::mat4 fullTransformMatrix2 = glm::translate(projectionMatrix, glm::vec3(1.0f, 0.0f, -3.75f));
+    // 1. rotate
+    fullTransformMatrix2 = glm::rotate(fullTransformMatrix2, glm::radians(126.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    m_Shader->SetUniformMat4f("fullTransformMatrix", fullTransformMatrix2);
     GLCall(glDrawElements(GL_TRIANGLES, m_NumIndices, GL_UNSIGNED_SHORT, nullptr));
   }
 

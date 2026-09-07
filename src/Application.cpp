@@ -18,6 +18,7 @@
 #include "jamieKing/scenes/DepthBuffer/SceneDepthBuffer.h"
 #include "jamieKing/scenes/ColorBuffer/SceneColorBuffer.h"
 #include "jamieKing/scenes/BasicCube/SceneBasicCube.h"
+#include "jamieKing/scenes/Instancing/SceneInstancing.h"
 #include "Scene.h"
 #include "SceneMenu.h"
 
@@ -110,6 +111,7 @@ int main(void)
 		sceneMenu->RegisterJKingScene<jking::scene::SceneDepthBuffer>("Depth buffer");
 		sceneMenu->RegisterJKingScene<jking::scene::SceneColorBuffer>("Color buffer");
 		sceneMenu->RegisterJKingScene<jking::scene::SceneBasicCube>("Basic cube");
+		sceneMenu->RegisterJKingScene<jking::scene::SceneInstancing>("Instancing");
 
 		double currentFrameTime = glfwGetTime();
 		double deltaTime = 0.0;

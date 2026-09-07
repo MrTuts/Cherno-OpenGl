@@ -647,6 +647,60 @@ The `nullptr` offset works because the IBO is already bound to `GL_ELEMENT_ARRAY
 
 ---
 
+## Instanced Rendering
+
+Instancing draws the **same mesh** many times with a single draw call, instead of issuing one `glDrawElements`/`glDrawArrays` per copy. The GPU repeats the vertex/index processing for the mesh `instancecount` times, and per-instance data (offset, color, transform, ...) comes from an extra vertex buffer instead of a uniform, so it can vary between instances without CPU intervention.
+
+```cpp
+glDrawElementsInstanced(
+    GL_TRIANGLES,       // primitive type
+    3,                  // number of indices per instance
+    GL_UNSIGNED_SHORT,  // index type
+    nullptr,            // offset into the IBO
+    5                   // instance count — draw the mesh 5 times
+);
+```
+
+There is an array-based equivalent, `glDrawArraysInstanced`, for meshes without an index buffer.
+
+### Per-instance attributes and `glVertexAttribDivisor`
+
+A normal vertex attribute advances to the next value **per vertex**. `glVertexAttribDivisor` changes an attribute to advance **per instance** instead:
+
+```cpp
+glVertexAttribDivisor(index, divisor);
+```
+
+The driver computes which element of the attribute's buffer to use as:
+
+```
+elementIndex = instanceID / divisor
+```
+
+| divisor | behaviour |
+|---|---|
+| `0` | default — advance per vertex (normal, non-instanced attribute) |
+| `1` | advance once per instance — instance 0 reads element 0, instance 1 reads element 1, ... |
+| `2` | advance once every 2 instances — two consecutive instances share the same element |
+
+This is how a single triangle mesh can be drawn at 5 different offsets: the offset attribute lives in its own buffer with one float per instance, and a divisor of `1` makes `glDrawElementsInstanced` step through that buffer once per repetition of the mesh, rather than once per vertex.
+
+### Multiple vertex attributes from multiple buffers
+
+Attribute index and source VBO are independent — nothing requires all attributes to live in the same buffer. Each attribute is associated with whichever `GL_ARRAY_BUFFER` was bound at the time `glVertexAttribPointer` was called for that index, and this association is what gets recorded into the current VAO:
+
+```cpp
+glBindBuffer(GL_ARRAY_BUFFER, vboA);
+glVertexAttribPointer(0, ...);   // attribute 0 now reads from vboA
+
+glBindBuffer(GL_ARRAY_BUFFER, vboB);
+glVertexAttribPointer(1, ...);   // attribute 1 now reads from vboB
+```
+
+This is useful when different attributes update at different rates or come from logically separate data (e.g. static per-vertex geometry in one buffer, per-instance offsets in another) — they don't need to be interleaved into one struct.
+
+---
+
 ## Uniforms
 
 Uniforms are **CPU-to-shader variables** — values you set once from C++ that every shader invocation can read. Unlike vertex attributes (which differ per vertex), a uniform has the same value across all vertices and fragments in a single draw call.
