@@ -92,13 +92,8 @@ namespace jking::scene
   {
   }
 
-  void SceneInstancing::OnRender(GLFWwindow *window)
+  void SceneInstancing::OnRender()
   {
-    glm::vec3 dominatigColor(1.0f, 0.0f, 0.0f);
-
-    int width, height;
-    glfwGetWindowSize(window, &width, &height);
-
     // draws x (5 - last arg) of instances
     GLCall(glDrawElementsInstanced(GL_TRIANGLES, 3, GL_UNSIGNED_SHORT, nullptr, 5));
   }

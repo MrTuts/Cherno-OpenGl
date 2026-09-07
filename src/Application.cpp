@@ -19,6 +19,7 @@
 #include "jamieKing/scenes/ColorBuffer/SceneColorBuffer.h"
 #include "jamieKing/scenes/BasicCube/SceneBasicCube.h"
 #include "jamieKing/scenes/Instancing/SceneInstancing.h"
+#include "jamieKing/scenes/CubeInstances/SceneCubeInstances.h"
 #include "Scene.h"
 #include "SceneMenu.h"
 
@@ -98,7 +99,7 @@ int main(void)
 		float increment = 0.05;
 
 		scene::Scene *currentScene = nullptr;
-		scene::SceneMenu *sceneMenu = new scene::SceneMenu(currentScene);
+		scene::SceneMenu *sceneMenu = new scene::SceneMenu(window, currentScene);
 		currentScene = sceneMenu;
 
 		sceneMenu->RegisterChernoScene<cherno::scene::SceneClearColor>("Clear color");
@@ -112,6 +113,7 @@ int main(void)
 		sceneMenu->RegisterJKingScene<jking::scene::SceneColorBuffer>("Color buffer");
 		sceneMenu->RegisterJKingScene<jking::scene::SceneBasicCube>("Basic cube");
 		sceneMenu->RegisterJKingScene<jking::scene::SceneInstancing>("Instancing");
+		sceneMenu->RegisterJKingScene<jking::scene::SceneCubeInstances>("Cube Instances");
 
 		double currentFrameTime = glfwGetTime();
 		double deltaTime = 0.0;
@@ -137,7 +139,7 @@ int main(void)
 			if (currentScene)
 			{
 				currentScene->OnUpdate(deltaTime);
-				currentScene->OnRender(window);
+				currentScene->OnRender();
 			}
 
 #pragma region imgui

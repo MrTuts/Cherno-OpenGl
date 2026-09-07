@@ -1,4 +1,3 @@
-#pragma once
 #include "SceneDepthBuffer.h"
 #include <GLFW/glfw3.h>
 
@@ -73,7 +72,7 @@ namespace jking::scene
     m_Shader->SetUniform1d("u_elapsedTime", glfwGetTime());
   }
 
-  void SceneDepthBuffer::OnRender(GLFWwindow *window)
+  void SceneDepthBuffer::OnRender()
   {
     // clear the depth buffer array, every value is set to 1.0 (furthest away)
     glClear(GL_DEPTH_BUFFER_BIT);

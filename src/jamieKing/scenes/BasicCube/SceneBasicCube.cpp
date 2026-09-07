@@ -14,7 +14,7 @@
 namespace jking::scene
 {
 
-  SceneBasicCube::SceneBasicCube() : m_Rotation(glm::vec3(20.0f, 20.0f, 0.0f)), m_Translation(glm::vec3(0.0f, 0.0f, -3.0f)), m_FOV(60.0f), m_Near(0.1f), m_Far(10.0f)
+  SceneBasicCube::SceneBasicCube(GLFWwindow *window) : Scene::Scene(window), m_Rotation(glm::vec3(20.0f, 20.0f, 0.0f)), m_Translation(glm::vec3(0.0f, 0.0f, -3.0f)), m_FOV(60.0f), m_Near(0.1f), m_Far(10.0f)
   {
     ShapeData shapeData = ShapeGenerator::makeCube();
 
@@ -51,12 +51,12 @@ namespace jking::scene
   {
   }
 
-  void SceneBasicCube::OnRender(GLFWwindow *window)
+  void SceneBasicCube::OnRender()
   {
     glm::vec3 dominatigColor(1.0f, 0.0f, 0.0f);
 
     int width, height;
-    glfwGetWindowSize(window, &width, &height);
+    glfwGetWindowSize(m_Window, &width, &height);
 
     /* Precomputing the combined matrix once per draw avoids repeating matrix multiplications for every vertex in the shader. */
 
@@ -79,14 +79,6 @@ namespace jking::scene
     fullTransformMatrix = glm::rotate(fullTransformMatrix, glm::radians(m_Rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
 
     m_Shader->SetUniformMat4f("fullTransformMatrix", fullTransformMatrix);
-    GLCall(glDrawElements(GL_TRIANGLES, m_NumIndices, GL_UNSIGNED_SHORT, nullptr));
-
-    /* Cube 2 */
-    // 2. translate
-    glm::mat4 fullTransformMatrix2 = glm::translate(projectionMatrix, glm::vec3(1.0f, 0.0f, -3.75f));
-    // 1. rotate
-    fullTransformMatrix2 = glm::rotate(fullTransformMatrix2, glm::radians(126.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    m_Shader->SetUniformMat4f("fullTransformMatrix", fullTransformMatrix2);
     GLCall(glDrawElements(GL_TRIANGLES, m_NumIndices, GL_UNSIGNED_SHORT, nullptr));
   }
 

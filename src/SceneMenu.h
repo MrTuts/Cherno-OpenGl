@@ -17,17 +17,26 @@ namespace scene
   class SceneMenu : public Scene
   {
   public:
-    SceneMenu(Scene *&currentScenePtr);
+    SceneMenu(GLFWwindow *window, Scene *&currentScenePtr);
 
-    void OnRender(GLFWwindow *window) override;
+    void OnRender() override;
     void OnImGuiRender() override;
 
     template <typename T>
     void RegisterScene(const std::string &name, const std::string &parent)
     {
       std::cout << "Registering scene " << name << std::endl;
-      m_Scenes.push_back({name, parent, []()
-                          { return new T(); }});
+      m_Scenes.push_back({name, parent, [this]()
+                          {
+                            if constexpr (std::is_constructible_v<T, GLFWwindow *>)
+                            {
+                              return new T(m_Window);
+                            }
+                            else
+                            {
+                              return new T();
+                            }
+                          }});
       // m_Scenes.push_back(std::make_pair(name, []()
       //                                   { return new T(); }));
     }

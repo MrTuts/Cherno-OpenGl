@@ -14,11 +14,11 @@ namespace jking::scene
   class SceneBasicCube : public ::scene::Scene
   {
   public:
-    SceneBasicCube();
+    SceneBasicCube(GLFWwindow *window);
     ~SceneBasicCube();
 
     void OnUpdate(float deltaTime) override;
-    void OnRender(GLFWwindow *window) override;
+    void OnRender() override;
     void OnImGuiRender() override;
 
   private:

@@ -7,11 +7,11 @@
 namespace scene
 {
 
-  SceneMenu::SceneMenu(Scene *&currentScenePtr) : m_CurrentScene(currentScenePtr)
+  SceneMenu::SceneMenu(GLFWwindow *window, Scene *&currentScenePtr) : Scene::Scene(window), m_CurrentScene(currentScenePtr)
   {
   }
 
-  void SceneMenu::OnRender(GLFWwindow *window)
+  void SceneMenu::OnRender()
   {
     GLCall(glClearColor(0.0f, 0.0f, 0.0f, 1.0f));
   }

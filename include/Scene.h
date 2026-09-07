@@ -11,13 +11,15 @@ namespace scene
   {
   protected:
     bool m_ControlsBuffer;
+    GLFWwindow *m_Window;
 
   public:
-    Scene() : m_ControlsBuffer(false) {};
+    Scene() : m_ControlsBuffer(false), m_Window(nullptr) {};
+    Scene(GLFWwindow *window) : m_ControlsBuffer(false), m_Window(window) {};
     virtual ~Scene() {}
 
     virtual void OnUpdate(float deltaTime) {}
-    virtual void OnRender(GLFWwindow *window) {}
+    virtual void OnRender() {}
     virtual void OnImGuiRender() {}
 
     inline bool controlsBuffer()

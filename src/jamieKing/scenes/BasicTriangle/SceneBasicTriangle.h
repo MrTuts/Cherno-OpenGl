@@ -16,7 +16,7 @@ namespace jking::scene
     ~SceneBasicTriangle() {}
 
     void OnUpdate(float deltaTime) override;
-    void OnRender(GLFWwindow *window) override;
+    void OnRender() override;
     void OnImGuiRender() override;
 
   private:

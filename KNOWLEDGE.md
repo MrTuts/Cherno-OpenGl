@@ -390,6 +390,22 @@ For a more complex vertex layout (position + UV + normal) the stride would be th
 stride = sizeof(float) * 8 = 32 bytes
 ```
 
+### Four components per attribute
+
+The `size` argument of `glVertexAttribPointer` describes one generic vertex attribute and may be only 1, 2, 3, or 4 components. With `GL_FLOAT`, that means one attribute can provide at most four floats to the vertex shader. This is **not** a limit of four floats for an entire vertex: a vertex can contain many attributes, each with its own location, stride, and offset.
+
+Values that need more than four components must be split across consecutive attribute locations. A `mat4` is the common example: it contains four column vectors, so it occupies four `vec4` attribute locations rather than being passed as one 16-float attribute:
+
+```cpp
+// A mat4 occupies locations 2, 3, 4, and 5.
+glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)0);
+glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(sizeof(float) * 4));
+glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(sizeof(float) * 8));
+glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(sizeof(float) * 12));
+```
+
+In GLSL, declaring `layout(location = 2) in mat4 transform;` consumes locations 2 through 5. For instanced data, set the same divisor on all four locations so every matrix advances once per instance; otherwise its columns would not advance together.
+
 ---
 
 ## Vertex Array Object (VAO)
