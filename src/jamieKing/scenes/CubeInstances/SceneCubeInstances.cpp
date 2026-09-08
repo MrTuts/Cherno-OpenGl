@@ -29,6 +29,12 @@ namespace jking::scene
     GLCall(glBufferData(GL_ARRAY_BUFFER, shapeData.vertexBufferSize(), shapeData.vertices, GL_STATIC_DRAW));
     GLCall(glEnableVertexAttribArray(0));
     GLCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0));
+    /*
+      We can specify the shader attribute also like this:
+      glVertexAttrib3f(1, 0, 1, 0);
+      This would in this case set color for every vertex to green (instead of it varying per vertex).
+      In this case we would NOT call glEnableVertexAttribArray(1)
+    */
     GLCall(glEnableVertexAttribArray(1));
     GLCall(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)(sizeof(float) * 3)));
 

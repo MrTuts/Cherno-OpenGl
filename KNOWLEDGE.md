@@ -381,6 +381,26 @@ glVertexAttribPointer(
 );
 ```
 
+### Constant vertex attributes: `glVertexAttrib*`
+
+An attribute does not have to read a different value for every vertex. If an attribute array is **disabled**, OpenGL uses the current generic attribute value for that index instead. Set that value with one of the `glVertexAttrib*` functions:
+
+```cpp
+glDisableVertexAttribArray(1);
+glVertexAttrib3f(1, 0.0f, 1.0f, 0.0f); // constant green RGB value
+```
+
+The vertex shader receives the same value at location 1 for every vertex, which is useful when a mesh has no per-vertex color or when all vertices should share one value. `glVertexAttrib3f` does not read a buffer and does not replace `glVertexAttribPointer`; it sets the fallback value used while that attribute array is disabled. For a four-component shader input, the omitted component follows OpenGL's generic-attribute rules and is typically `1.0`.
+
+When the array is enabled, the value from `glVertexAttrib3f` is ignored and the `glVertexAttribPointer` configuration supplies the data instead:
+
+```cpp
+glEnableVertexAttribArray(1);
+glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), colorOffset);
+```
+
+The enable/disable flag and pointer configuration are vertex-array state recorded by the currently bound VAO. The current generic attribute value is separate state; changing it affects draws that use the disabled attribute, not the contents of the VBO.
+
 For a more complex vertex layout (position + UV + normal) the stride would be the total size of one vertex and the offset would differ per attribute:
 
 ```
