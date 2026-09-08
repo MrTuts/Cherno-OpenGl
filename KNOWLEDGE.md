@@ -526,6 +526,24 @@ void main()
 
 `layout(location = 0)` ties this `in` variable to attribute index 0 — the same index passed to `glVertexAttribPointer` and `glEnableVertexAttribArray`. Our data is 2 floats (x, y); OpenGL auto-promotes it to `vec4` with z=0, w=1.
 
+The meaning of `in` depends on the shader stage. In a vertex shader, it is a vertex attribute input read from the currently bound VAO. In a later stage, such as a fragment shader, it is an interface input produced by the previous stage; it is not read from a vertex attribute slot.
+
+For example, a vertex shader can pass texture coordinates to the fragment shader:
+
+```glsl
+// vertex shader
+out vec2 v_TexCoord;
+void main() {
+    v_TexCoord = texCoord;
+    // ... write gl_Position ...
+}
+
+// fragment shader
+in vec2 v_TexCoord;
+```
+
+The rasterizer normally interpolates the vertex shader's `out` value across each primitive before the fragment shader reads it. These stage-interface variables must be compatible at link time: the producer's `out` and consumer's `in` use matching names (or explicit interface locations) and compatible types. Their component count does not automatically become four; a `vec2` remains a two-component value and consumes implementation-defined varying resources according to its actual type and packing rules.
+
 ### Fragment Shader (Pixel Shader)
 
 Runs once per pixel (fragment) that lies inside a rasterized primitive. Writes to one or more `out` color outputs.
@@ -586,7 +604,7 @@ if (!result) {
 unsigned int program = glCreateProgram();
 glAttachShader(program, vs);
 glAttachShader(program, fs);
-glLinkProgram(program);       // link stages together, resolve in/out connections
+glLinkProgram(program);       // link stages, validate in/out interfaces, assign locations
 glValidateProgram(program);   // check program can run in current GL state
 
 // compiled shader objects are like .obj files — delete after linking
@@ -597,6 +615,18 @@ glUseProgram(program);        // install program into the rendering pipeline
 ```
 
 `glDeleteProgram(shader)` at the end of the program frees GPU resources.
+
+### What linking determines
+
+Compilation checks one shader stage in isolation. Linking combines the compiled stages into one executable program and checks that values crossing stage boundaries can connect. For example, a vertex shader's `out vec2 v_TexCoord` must be consumed by a compatible fragment shader `in vec2 v_TexCoord`; a missing, mismatched, or otherwise incompatible interface can make linking fail.
+
+Linking also assigns locations to shader inputs and outputs that do not specify them explicitly. Vertex attribute locations are the locations used by `glVertexAttribPointer`; they can be fixed in GLSL with `layout(location = N)` or assigned before linking with:
+
+```cpp
+glBindAttribLocation(program, 2, "position"); // must be before glLinkProgram
+```
+
+After linking, query an automatically assigned vertex attribute location with `glGetAttribLocation(program, "position")`. This is separate from stage-interface `in` values such as a fragment shader's `v_TexCoord`, which receive data from the previous shader stage rather than from a VAO attribute slot. Explicit interface locations can be used when the shader stages need location-based matching instead of name-based matching.
 
 ---
 

@@ -122,11 +122,28 @@ unsigned int Shader::CreateShader(const std::string &vertexShader, const std::st
 
   GLCall(glAttachShader(program, vs));
   GLCall(glAttachShader(program, fs));
+
+  /*
+    Linking is when "in" values locations are determined
+
+    if we did not have `layout(location = 0) in vec4 position;`, but just `in vec4 position;` in fragment shader,
+    position of the in values is auto assigned by the linker.
+
+    We can get attribute location by:
+    GLint positionLocation = glGetAttribLocation(program, "position")
+
+    We can also decide the value position here by.
+    glBindAttribLocation(program, 2, "position")
+    This must be called before linking
+
+    Every in value in fragment shader takes space of vec4, even if we specify other type
+  */
   GLCall(glLinkProgram(program));
   if (!CheckProgramStatus(program))
   {
     return 0;
   }
+
   GLCall(glValidateProgram(program));
 
   // The program is created, we can delete intermediate shaders (like .obj files)
