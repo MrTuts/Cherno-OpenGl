@@ -20,6 +20,7 @@
 #include "jamieKing/scenes/BasicCube/SceneBasicCube.h"
 #include "jamieKing/scenes/Instancing/SceneInstancing.h"
 #include "jamieKing/scenes/CubeInstances/SceneCubeInstances.h"
+#include "jamieKing/scenes/Camera/SceneCamera.h"
 #include "Scene.h"
 #include "SceneMenu.h"
 
@@ -45,7 +46,7 @@ int main(void)
 #endif
 
 	GLFWwindow *window;
-	window = glfwCreateWindow(640, 480, "OpenGL", NULL, NULL);
+	window = glfwCreateWindow(1280, 720, "OpenGL", NULL, NULL);
 	if (!window)
 	{
 		glfwTerminate();
@@ -114,6 +115,7 @@ int main(void)
 		sceneMenu->RegisterJKingScene<jking::scene::SceneBasicCube>("Basic cube");
 		sceneMenu->RegisterJKingScene<jking::scene::SceneInstancing>("Instancing");
 		sceneMenu->RegisterJKingScene<jking::scene::SceneCubeInstances>("Cube Instances");
+		sceneMenu->RegisterJKingScene<jking::scene::SceneCamera>("Camera");
 
 		double currentFrameTime = glfwGetTime();
 		double deltaTime = 0.0;
