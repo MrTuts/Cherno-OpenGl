@@ -381,6 +381,8 @@ glVertexAttribPointer(
 );
 ```
 
+`glVertexAttribPointer` does more than describe the attribute format: it associates the attribute with the VBO currently bound to `GL_ARRAY_BUFFER`. That buffer association, together with the format, stride, and offset, is recorded in the currently bound VAO. The `GL_ARRAY_BUFFER` binding itself is not retained as a live reference, so binding a different VBO later does not change an existing attribute; call `glVertexAttribPointer` again while the new VBO is bound to retarget it.
+
 ### Constant vertex attributes: `glVertexAttrib*`
 
 An attribute does not have to read a different value for every vertex. If an attribute array is **disabled**, OpenGL uses the current generic attribute value for that index instead. Set that value with one of the `glVertexAttrib*` functions:

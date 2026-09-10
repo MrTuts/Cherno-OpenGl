@@ -21,6 +21,8 @@
 #include "jamieKing/scenes/Instancing/SceneInstancing.h"
 #include "jamieKing/scenes/CubeInstances/SceneCubeInstances.h"
 #include "jamieKing/scenes/Camera/SceneCamera.h"
+#include "jamieKing/scenes/MultiElements/MultiElemsVertexArrayBuffer.h"
+#include "jamieKing/scenes/MultiElements/MultiElemsVertexAttributes.h"
 #include "Scene.h"
 #include "SceneMenu.h"
 
@@ -116,6 +118,8 @@ int main(void)
 		sceneMenu->RegisterJKingScene<jking::scene::SceneInstancing>("Instancing");
 		sceneMenu->RegisterJKingScene<jking::scene::SceneCubeInstances>("Cube Instances");
 		sceneMenu->RegisterJKingScene<jking::scene::SceneCamera>("Camera");
+		sceneMenu->RegisterJKingScene<jking::scene::MultiElemsVertexArrayBuffer>("Multiple elements - Vertex Array Buffer");
+		sceneMenu->RegisterJKingScene<jking::scene::MultiElemsVertexAttributes>("Multiple elements - Vertex attributes");
 
 		double currentFrameTime = glfwGetTime();
 		double deltaTime = 0.0;
