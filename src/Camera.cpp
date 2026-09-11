@@ -4,6 +4,7 @@
 #include "glm/gtx/euler_angles.hpp"
 
 Camera::Camera() : m_ViewDirection(0.0f, 0.0f, -1.0f),
+                   m_Position(0.0f, 0.0f, 0.0f),
                    UP(0.0f, 1.0f, 0.0f),
                    ROTATE_SPEED(0.3f),
                    MOVE_SPEED(0.1f),
