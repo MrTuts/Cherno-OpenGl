@@ -45,6 +45,8 @@ namespace jking::scene
   SceneBasicCube::~SceneBasicCube()
   {
     glDisable(GL_DEPTH_TEST);
+    GLCall(glDeleteBuffers(1, &m_VBO_ID));
+    GLCall(glDeleteBuffers(1, &m_IBO_ID));
   }
 
   void SceneBasicCube::OnUpdate(float deltaTime)

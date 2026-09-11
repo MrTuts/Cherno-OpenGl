@@ -1417,6 +1417,21 @@ IBO = [indices for A   | indices for B   | ...]
 
 ---
 
+## Storing Multiple Distinct Meshes: Buffer Layout Strategies
+
+Approach 1 above assumes every object reuses the *same* VAO/VBO/IBO. When objects are genuinely different meshes (not repeats of one shape), there are several ways to lay out the buffers that hold them. The `MultiElements` scenes ([src/jamieKing/scenes/MultiElements](src/jamieKing/scenes/MultiElements)) render a cube and an arrow mesh side by side using four progressively more compact strategies:
+
+1. **One VAO, buffers swapped per mesh** (`MultiElemsVertexAttributes`): a single VAO is bound once and its attribute slots enabled, but the VBO/IBO attached to those slots changes per mesh. Because a VAO stores only the byte layout recorded the last time `glVertexAttribPointer` ran — not a live reference to a buffer — switching meshes requires rebinding the mesh's VBO, re-calling `glVertexAttribPointer` (even though the layout is identical for every mesh), and rebinding its IBO.
+2. **One VAO per mesh** (`MultiElemsVertexArrayBuffer`): each mesh gets its own VAO/VBO/IBO trio; switching meshes is a single `glBindVertexArray` call. This is the pattern recommended earlier in this document for performance.
+3. **Shared VBO + shared IBO, separate VAOs** (`MultiElemsSingleArrayAndIndexBuffer`): every mesh's vertex data is packed back-to-back into one `GL_ARRAY_BUFFER` (via repeated `glBufferSubData`), and every mesh's index data into one shared `GL_ELEMENT_ARRAY_BUFFER` the same way. Each mesh keeps its own VAO, whose `glVertexAttribPointer` offset points into that mesh's byte range of the shared VBO, and whose draw call passes the mesh's byte offset into the shared IBO as the `indices` argument of `glDrawElements` instead of `nullptr`.
+4. **One buffer object for everything** (`MultiElemsSingleArrayBuffer`): vertex data and index data for *all* meshes are packed into a single GPU buffer, which is bound as `GL_ARRAY_BUFFER` when describing vertex attributes and as `GL_ELEMENT_ARRAY_BUFFER` when drawing. This works because a buffer object is just a block of memory — the binding target only says how the next calls should interpret it, it isn't a property of the buffer itself. Each mesh's VAO records attribute offsets into the buffer's vertex region, and its draw call passes a byte offset into the buffer's index region.
+
+The pattern that makes 3 and 4 possible: `glVertexAttribPointer`'s pointer argument and `glDrawElements`'s `indices` argument are both **byte offsets into whichever buffer is currently bound**, not absolute memory addresses. That's what allows unrelated meshes to share one physical buffer.
+
+Trade-off: strategies 3 and 4 minimize the number of allocated buffer objects (useful when the driver/GPU has a practical limit on live buffers, or to reduce allocation churn for many small meshes) at the cost of manual offset bookkeeping and the inability to independently resize or delete one mesh's data without re-packing the whole buffer.
+
+---
+
 ## Batch Rendering Variants
 
 ### Variant A — Per-vertex color (no textures)

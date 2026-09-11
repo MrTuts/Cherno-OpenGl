@@ -83,6 +83,10 @@ namespace jking::scene
       glfwSetWindowUserPointer(m_Window, nullptr);
     }
     glfwSetScrollCallback(m_Window, ImGui_ImplGlfw_ScrollCallback);
+
+    GLCall(glDeleteBuffers(1, &m_VBO_ID));
+    GLCall(glDeleteBuffers(1, &m_IBO_ID));
+    GLCall(glDeleteBuffers(1, &m_TMB_ID));
   }
 
   void SceneCamera::ScrollCallback(GLFWwindow *window, double xoffset, double yoffset)

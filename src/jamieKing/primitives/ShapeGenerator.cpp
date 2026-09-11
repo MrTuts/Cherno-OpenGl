@@ -7,6 +7,58 @@
 // divides the size of the element by the size of first element, which gives us the element count
 #define NUM_ARRAY_ELEMENTS(a) sizeof(a) / sizeof(*a)
 
+static glm::vec3 randomColor()
+{
+    glm::vec3 ret;
+    ret.x = rand() / (float)RAND_MAX;
+    ret.y = rand() / (float)RAND_MAX;
+    ret.z = rand() / (float)RAND_MAX;
+    return ret;
+}
+
+ShapeData ShapeGenerator::makePlaneVerts(unsigned int dimensions)
+{
+    ShapeData ret;
+    ret.numVertices = dimensions * dimensions;
+    int half = dimensions / 2;
+    ret.vertices = new Vertex[ret.numVertices];
+    for (int i = 0; i < dimensions; i++)
+    {
+        for (int j = 0; j < dimensions; j++)
+        {
+            Vertex &thisVert = ret.vertices[i * dimensions + j];
+            thisVert.position.x = j - half;
+            thisVert.position.z = i - half;
+            thisVert.position.y = 0;
+            thisVert.color = randomColor();
+        }
+    }
+    return ret;
+}
+
+ShapeData ShapeGenerator::makePlaneIndices(unsigned int dimensions)
+{
+    ShapeData ret;
+    ret.numIndices = (dimensions - 1) * (dimensions - 1) * 2 * 3; // 2 triangles per square, 3 indices per triangle
+    ret.indices = new unsigned short[ret.numIndices];
+    int runner = 0;
+    for (int row = 0; row < dimensions - 1; row++)
+    {
+        for (int col = 0; col < dimensions - 1; col++)
+        {
+            ret.indices[runner++] = dimensions * row + col;
+            ret.indices[runner++] = dimensions * row + col + dimensions;
+            ret.indices[runner++] = dimensions * row + col + dimensions + 1;
+
+            ret.indices[runner++] = dimensions * row + col;
+            ret.indices[runner++] = dimensions * row + col + dimensions + 1;
+            ret.indices[runner++] = dimensions * row + col + 1;
+        }
+    }
+    assert(runner == ret.numIndices);
+    return ret;
+}
+
 ShapeData ShapeGenerator::makeTriangle()
 {
     ShapeData ret;
@@ -234,78 +286,40 @@ ShapeData ShapeGenerator::makeArrow()
             glm::vec3(0.50f, 0.50f, 0.50f),
             glm::vec3(0.25f, -0.25f, 1.00f), // 39
             glm::vec3(0.50f, 0.50f, 0.50f),
-        };
+    };
 
     ret.numVertices = NUM_ARRAY_ELEMENTS(stackVerts);
     ret.vertices = new Vertex[ret.numVertices];
     memcpy(ret.vertices, stackVerts, sizeof(stackVerts));
 
+    // clang-format off
     GLushort stackIndices[] =
         {
-            0,
-            1,
-            2, // Top
-            0,
-            2,
-            3,
-            4,
-            6,
-            5, // Bottom
-            4,
-            7,
-            6,
-            8,
-            10,
-            9, // Right side of arrow tip
-            8,
-            11,
-            10,
-            12,
-            15,
-            13, // Left side of arrow tip
-            12,
-            14,
-            15,
-            16,
-            19,
-            17, // Back side of arrow tip
-            16,
-            18,
-            19,
-            20,
-            22,
-            21, // Top side of back of arrow
-            20,
-            23,
-            22,
-            24,
-            25,
-            26, // Bottom side of back of arrow
-            24,
-            26,
-            27,
-            28,
-            30,
-            29, // Right side of back of arrow
-            28,
-            31,
-            30,
-            32,
-            33,
-            34, // Left side of back of arrow
-            32,
-            34,
-            35,
-            36,
-            39,
-            37, // Back side of back of arrow
-            36,
-            38,
-            39,
-        };
+            0,1,2, // Top
+            0,2,3,4,6,5, // Bottom
+            4,7,6,8,10,9, // Right side of arrow tip
+            8,11,10,12,15,13, // Left side of arrow tip
+            12,14,15,16,19,17, // Back side of arrow tip
+            16,18,19,20,22,21, // Top side of back of arrow
+            20,23,22,24,25,26, // Bottom side of back of arrow
+            24,26,27,28,30,29, // Right side of back of arrow
+            28,31,30,32,33,34, // Left side of back of arrow
+            32,34,35,36,39,37, // Back side of back of arrow
+            36,38,39,
+    };
+    // clang-format on
 
     ret.numIndices = NUM_ARRAY_ELEMENTS(stackIndices);
     ret.indices = new GLushort[ret.numIndices];
     memcpy(ret.indices, stackIndices, sizeof(stackIndices));
+    return ret;
+}
+
+ShapeData ShapeGenerator::makePlane(unsigned int dimensions)
+{
+    ShapeData ret = makePlaneVerts(dimensions);
+    ShapeData ret2 = makePlaneIndices(dimensions);
+    ret.numIndices = ret2.numIndices;
+    ret.indices = ret2.indices;
     return ret;
 }

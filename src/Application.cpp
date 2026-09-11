@@ -23,6 +23,8 @@
 #include "jamieKing/scenes/Camera/SceneCamera.h"
 #include "jamieKing/scenes/MultiElements/MultiElemsVertexArrayBuffer.h"
 #include "jamieKing/scenes/MultiElements/MultiElemsVertexAttributes.h"
+#include "jamieKing/scenes/MultiElements/MultiElemsSingleArrayAndIndexBuffer.h"
+#include "jamieKing/scenes/MultiElements/MultiElemsSingleArrayBuffer.h"
 #include "Scene.h"
 #include "SceneMenu.h"
 
@@ -120,6 +122,8 @@ int main(void)
 		sceneMenu->RegisterJKingScene<jking::scene::SceneCamera>("Camera");
 		sceneMenu->RegisterJKingScene<jking::scene::MultiElemsVertexArrayBuffer>("Multiple elements - Vertex Array Buffer");
 		sceneMenu->RegisterJKingScene<jking::scene::MultiElemsVertexAttributes>("Multiple elements - Vertex attributes");
+		sceneMenu->RegisterJKingScene<jking::scene::MultiElemsSingleArrayAndIndexBuffer>("Multiple elements - Single Array and Index Buffer");
+		sceneMenu->RegisterJKingScene<jking::scene::MultiElemsSingleArrayBuffer>("Multiple elements - Single Array Buffer");
 
 		double currentFrameTime = glfwGetTime();
 		double deltaTime = 0.0;

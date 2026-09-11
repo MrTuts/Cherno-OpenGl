@@ -46,9 +46,8 @@ namespace jking::scene
 
     /* Offset buffer */
     // Buffer for offset data
-    GLuint offsetsBufferId;
-    GLCall(glGenBuffers(1, &offsetsBufferId));
-    GLCall(glBindBuffer(GL_ARRAY_BUFFER, offsetsBufferId));
+    GLCall(glGenBuffers(1, &m_OffsetBO_ID));
+    GLCall(glBindBuffer(GL_ARRAY_BUFFER, m_OffsetBO_ID));
     GLCall(glBufferData(GL_ARRAY_BUFFER, sizeof(offsets), offsets, GL_STATIC_DRAW));
     // Define attributes for this offset buffer
     GLCall(glEnableVertexAttribArray(1));
@@ -86,6 +85,9 @@ namespace jking::scene
 
   SceneInstancing::~SceneInstancing()
   {
+    GLCall(glDeleteBuffers(1, &m_VBO_ID));
+    GLCall(glDeleteBuffers(1, &m_OffsetBO_ID));
+    GLCall(glDeleteBuffers(1, &m_IBO_ID));
   }
 
   void SceneInstancing::OnUpdate(float deltaTime)

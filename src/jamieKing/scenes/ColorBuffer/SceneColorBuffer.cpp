@@ -35,6 +35,11 @@ namespace jking::scene
     m_Shader->Bind();
   }
 
+  SceneColorBuffer::~SceneColorBuffer()
+  {
+    GLCall(glDeleteBuffers(1, &m_VBO_ID));
+  }
+
   void SceneColorBuffer::OnUpdate(float deltaTime)
   {
     const double time = glfwGetTime();

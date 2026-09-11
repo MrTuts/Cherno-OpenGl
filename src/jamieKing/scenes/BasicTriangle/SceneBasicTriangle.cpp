@@ -51,6 +51,12 @@ namespace jking::scene
     m_Shader->SetUniform1d("u_elapsedTime", glfwGetTime());
   }
 
+  SceneBasicTriangle::~SceneBasicTriangle()
+  {
+    GLCall(glDeleteBuffers(1, &m_VBO_ID));
+    GLCall(glDeleteBuffers(1, &m_IBO_ID));
+  }
+
   void SceneBasicTriangle::OnUpdate(float deltaTime)
   {
     m_Shader->SetUniform1d("u_elapsedTime", glfwGetTime());

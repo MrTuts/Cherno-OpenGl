@@ -81,6 +81,10 @@ namespace jking::scene
   SceneCubeInstances::~SceneCubeInstances()
   {
     glDisable(GL_DEPTH_TEST);
+
+    GLCall(glDeleteBuffers(1, &m_VBO_ID));
+    GLCall(glDeleteBuffers(1, &m_IBO_ID));
+    GLCall(glDeleteBuffers(1, &m_TMB_ID));
   }
 
   void SceneCubeInstances::OnUpdate(float deltaTime)

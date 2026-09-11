@@ -13,7 +13,7 @@ namespace jking::scene
   {
   public:
     SceneColorBuffer();
-    ~SceneColorBuffer() {}
+    ~SceneColorBuffer();
 
     void OnUpdate(float deltaTime) override;
     void OnRender() override;

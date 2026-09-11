@@ -23,6 +23,7 @@ namespace jking::scene
     GLuint m_VAO_ID;
     GLuint m_VBO_ID;
     GLuint m_IBO_ID;
+    GLuint m_OffsetBO_ID;
     std::unique_ptr<Shader> m_Shader;
   };
 }

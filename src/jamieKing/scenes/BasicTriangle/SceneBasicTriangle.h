@@ -13,7 +13,7 @@ namespace jking::scene
   {
   public:
     SceneBasicTriangle();
-    ~SceneBasicTriangle() {}
+    ~SceneBasicTriangle();
 
     void OnUpdate(float deltaTime) override;
     void OnRender() override;

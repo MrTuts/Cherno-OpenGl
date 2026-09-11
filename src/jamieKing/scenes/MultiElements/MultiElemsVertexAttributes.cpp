@@ -66,6 +66,11 @@ namespace jking::scene
   MultiElemsVertexAttributes::~MultiElemsVertexAttributes()
   {
     glDisable(GL_DEPTH_TEST);
+
+    GLCall(glDeleteBuffers(1, &m_VBO_Cube_ID));
+    GLCall(glDeleteBuffers(1, &m_IBO_Cube_ID));
+    GLCall(glDeleteBuffers(1, &m_VBO_Arrow_ID));
+    GLCall(glDeleteBuffers(1, &m_IBO_Arrow_ID));
   }
 
   void MultiElemsVertexAttributes::OnUpdate(float deltaTime)
@@ -82,7 +87,7 @@ namespace jking::scene
     glm::mat4 worldToViewMatrix = m_Camera.getWorldToViewMatrix();
     glm::mat4 worldToProjectionMatrix = viewToProjectionMatrix * m_Camera.getWorldToViewMatrix();
 
-    glm::mat4 elementModelToWorld = glm::translate(glm::vec3(-1.0f, 0.0f, -3.0f)) * glm::rotate(glm::radians(36.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    glm::mat4 elementModelToWorld = glm::translate(glm::vec3(-2.0f, 0.0f, -3.0f)) * glm::rotate(glm::radians(36.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 
     /* Mount cube buffers */
     GLCall(glBindBuffer(GL_ARRAY_BUFFER, m_VBO_Cube_ID));
@@ -93,7 +98,7 @@ namespace jking::scene
     m_Shader->SetUniformMat4f("fullTransformMatrix", worldToProjectionMatrix * elementModelToWorld);
     GLCall(glDrawElements(GL_TRIANGLES, m_CubeNumIndices, GL_UNSIGNED_SHORT, nullptr));
 
-    elementModelToWorld = glm::translate(glm::vec3(1.0f, 0.0f, -3.75f)) * glm::rotate(glm::radians(126.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    elementModelToWorld = glm::translate(glm::vec3(2.0f, 0.0f, -3.75f)) * glm::rotate(glm::radians(126.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     m_Shader->SetUniformMat4f("fullTransformMatrix", worldToProjectionMatrix * elementModelToWorld);
     GLCall(glDrawElements(GL_TRIANGLES, m_CubeNumIndices, GL_UNSIGNED_SHORT, nullptr));
 

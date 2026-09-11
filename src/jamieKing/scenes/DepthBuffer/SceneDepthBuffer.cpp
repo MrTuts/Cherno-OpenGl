@@ -65,6 +65,8 @@ namespace jking::scene
   SceneDepthBuffer::~SceneDepthBuffer()
   {
     GLCall(glDisable(GL_DEPTH_TEST));
+    GLCall(glDeleteBuffers(1, &m_VBO_ID));
+    GLCall(glDeleteBuffers(1, &m_IBO_ID));
   }
 
   void SceneDepthBuffer::OnUpdate(float deltaTime)
