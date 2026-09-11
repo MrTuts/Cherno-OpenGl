@@ -20,7 +20,7 @@ namespace jking::scene
   MultiElemsSingleArrayAndIndexBuffer::MultiElemsSingleArrayAndIndexBuffer(GLFWwindow *window) : Scene::Scene(window), m_CameraControls(window, m_Camera), m_Rotation(glm::vec3(20.0f, 20.0f, 0.0f)), m_Translation(glm::vec3(0.0f, 0.0f, -3.0f))
   {
     /* Cubes */
-    ShapeData cubeShapeData = ShapeGenerator::makePlane();
+    ShapeData cubeShapeData = ShapeGenerator::makeCube();
     ShapeData arrowShapeData = ShapeGenerator::makeArrow();
 
     /* Vertex buffer */
